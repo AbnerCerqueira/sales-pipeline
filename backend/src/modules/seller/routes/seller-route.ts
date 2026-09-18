@@ -1,5 +1,6 @@
 import type { FastifyPluginCallbackZod } from "@fastify/type-provider-zod";
 import {
+  listSellersResponseSchema,
   loginResponseSchema,
   loginSchema,
   registerSchema,
@@ -7,9 +8,32 @@ import {
 } from "@sales/shared";
 import { HttpStatus } from "../../../utils/http-status.ts";
 import { SwaggerTag } from "../../../utils/swagger-tags.ts";
-import { loginUseCase, registerUseCase } from "../instances.ts";
+import {
+  listSellersUseCase,
+  loginUseCase,
+  registerUseCase,
+} from "../instances.ts";
 
 export const sellerRoutes: FastifyPluginCallbackZod = (app) => {
+  app.get(
+    "/",
+    {
+      schema: {
+        description: "Lista todos os sellers cadastrados",
+        response: {
+          [HttpStatus.OK]: listSellersResponseSchema,
+        },
+        summary: "Listar sellers",
+        tags: [SwaggerTag.SELLER],
+      },
+    },
+    async (_request, reply) => {
+      const sellers = await listSellersUseCase.execute();
+
+      return reply.status(HttpStatus.OK).send(sellers);
+    }
+  );
+
   app.post(
     "/login",
     {

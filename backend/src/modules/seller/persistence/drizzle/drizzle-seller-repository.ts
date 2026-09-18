@@ -43,4 +43,23 @@ export class DrizzleSellerRepository implements SellerRepository {
       { createdAt: row.createdAt, updatedAt: row.updatedAt }
     );
   }
+
+  async findMany() {
+    const rows = await this.db
+      .select()
+      .from(sellersTable)
+      .orderBy(sellersTable.name);
+
+    return rows.map((row) =>
+      Seller.fromPersistence(
+        {
+          email: row.email,
+          name: row.name,
+          password: row.password,
+        },
+        row.id,
+        { createdAt: row.createdAt, updatedAt: row.updatedAt }
+      )
+    );
+  }
 }
