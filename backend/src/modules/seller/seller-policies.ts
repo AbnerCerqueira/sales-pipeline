@@ -18,6 +18,13 @@ export class EmailTakenError extends ApplicationError {
   }
 }
 
+export class SellerNotFoundError extends ApplicationError {
+  constructor() {
+    super(HttpStatus.NOT_FOUND, "Seller não encontrado");
+    this.name = "SellerNotFoundError";
+  }
+}
+
 export class SellerPolicies {
   private readonly passwordHasher: PasswordHasher;
   private readonly sellerRepository: SellerRepository;

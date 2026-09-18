@@ -49,6 +49,14 @@ export function listSellersViaHttp() {
   });
 }
 
+export function getMeViaHttp(token?: string) {
+  return app.inject({
+    headers: token ? { authorization: `Bearer ${token}` } : undefined,
+    method: "GET",
+    url: SellerRoutes.GET.ME,
+  });
+}
+
 export function loginViaHttp(input: { email: string; password: string }) {
   return app.inject({
     method: "POST",

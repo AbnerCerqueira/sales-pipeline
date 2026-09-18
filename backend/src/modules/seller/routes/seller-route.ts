@@ -9,12 +9,34 @@ import {
 import { HttpStatus } from "../../../utils/http-status.ts";
 import { SwaggerTag } from "../../../utils/swagger-tags.ts";
 import {
+  getMeUseCase,
   listSellersUseCase,
   loginUseCase,
   registerUseCase,
 } from "../instances.ts";
 
 export const sellerRoutes: FastifyPluginCallbackZod = (app) => {
+  app.get(
+    "/me",
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        description: "Retorna o seller autenticado no momento",
+        response: {
+          [HttpStatus.OK]: sellerDTOSchema,
+        },
+        security: [{ bearerAuth: [] }],
+        summary: "Recuperar seller autenticado",
+        tags: [SwaggerTag.SELLER],
+      },
+    },
+    async (request, reply) => {
+      const seller = await getMeUseCase.execute(request.user.id);
+
+      return reply.status(HttpStatus.OK).send(seller);
+    }
+  );
+
   app.get(
     "/",
     {

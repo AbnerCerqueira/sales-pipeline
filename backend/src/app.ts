@@ -9,6 +9,7 @@ import {
 } from "@fastify/type-provider-zod";
 import fastify from "fastify";
 import { healthRoutes } from "./health-route.ts";
+import authPlugin from "./lib/auth.ts";
 import jwtPlugin from "./lib/jwt.ts";
 import { leadRoutes } from "./modules/lead/routes/lead-route.ts";
 import { sellerRoutes } from "./modules/seller/routes/seller-route.ts";
@@ -21,6 +22,7 @@ export const app = fastify({ loggerInstance: logger })
 
 app.register(fastifyCors);
 app.register(jwtPlugin);
+app.register(authPlugin);
 
 app.register(swagger, {
   openapi: {
