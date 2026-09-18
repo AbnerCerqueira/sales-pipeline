@@ -18,7 +18,7 @@ function createLead() {
     location: "São Paulo, SP",
     responsibleId: "seller-id",
     source: "inbound",
-    whatsapp: "+5511999990000",
+    whatsapp: "(11) 99999-0000",
   });
 }
 

@@ -1,5 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type LeadSource, leadSourceSchema } from "@sales/shared";
+import {
+  createLeadSchema,
+  type LeadSource,
+  leadSourceSchema,
+} from "@sales/shared";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import AppShell from "../../components/app-shell.tsx";
@@ -8,18 +13,15 @@ import FormField from "../../components/form-field.tsx";
 import Select from "../../components/select.tsx";
 import Textarea from "../../components/textarea.tsx";
 import { useToast } from "../../components/toast.tsx";
+import { useCreateLeadMutation } from "../../hooks/use-leads.ts";
+import { useSellersQuery } from "../../hooks/use-sellers.ts";
+import { formatWhatsApp } from "../../lib/masks.ts";
 
-const createLeadFormSchema = z.object({
-  companyName: z.string().min(1, "Nome da empresa é obrigatório"),
-  description: z.string().optional(),
-  email: z.email("E-mail inválido"),
-  fullName: z.string().min(1, "Nome completo é obrigatório"),
-  jobTitle: z.string().optional(),
-  responsibleId: z.string().min(1, "Selecione um vendedor responsável"),
+const createLeadFormSchema = createLeadSchema.extend({
+  responsibleId: z.uuid("Selecione um vendedor responsável"),
   source: z.enum(leadSourceSchema.options, {
     message: "Selecione a origem do lead",
   }),
-  whatsapp: z.string().min(1, "Telefone é obrigatório"),
 });
 
 type CreateLeadFormInput = z.infer<typeof createLeadFormSchema>;
@@ -31,14 +33,10 @@ const LEAD_SOURCE_OPTIONS: Array<{ label: string; value: LeadSource }> = [
   { label: "Outro", value: "other" },
 ];
 
-const SELLER_OPTIONS = [
-  { id: "seller-1", name: "Rodrigo Ramos" },
-  { id: "seller-2", name: "Ana Souza" },
-  { id: "seller-3", name: "Carlos Lima" },
-];
-
 function CreateLeadPage() {
   const { toast } = useToast();
+  const createLeadMutation = useCreateLeadMutation();
+  const sellersQuery = useSellersQuery();
 
   const {
     control,
@@ -51,7 +49,7 @@ function CreateLeadPage() {
       description: "",
       email: "",
       fullName: "",
-      jobTitle: "",
+      location: "",
       responsibleId: "",
       whatsapp: "",
     },
@@ -59,9 +57,27 @@ function CreateLeadPage() {
     resolver: zodResolver(createLeadFormSchema),
   });
 
-  function onSubmit() {
-    toast("Lead salvo com sucesso", "success");
-    reset();
+  useEffect(() => {
+    if (sellersQuery.isError && sellersQuery.error) {
+      toast(sellersQuery.error.message);
+    }
+  }, [sellersQuery.isError, sellersQuery.error, toast]);
+
+  useEffect(() => {
+    if (createLeadMutation.isError && createLeadMutation.error) {
+      toast(createLeadMutation.error.message);
+    }
+  }, [createLeadMutation.isError, createLeadMutation.error, toast]);
+
+  useEffect(() => {
+    if (createLeadMutation.isSuccess) {
+      toast("Lead salvo com sucesso", "success");
+      reset();
+    }
+  }, [createLeadMutation.isSuccess, reset, toast]);
+
+  function onSubmit(data: CreateLeadFormInput) {
+    createLeadMutation.mutate(data);
   }
 
   function handleCancel() {
@@ -115,7 +131,7 @@ function CreateLeadPage() {
                 <FormField
                   error={errors.companyName?.message}
                   id="companyName"
-                  label="Nome da Empresa / Condomínio"
+                  label="Nome da Empresa"
                   onBlur={field.onBlur}
                   onChange={field.onChange}
                   placeholder="Ex: Academia FitLife Centro"
@@ -155,9 +171,13 @@ function CreateLeadPage() {
                 <FormField
                   error={errors.whatsapp?.message}
                   id="whatsapp"
-                  label="Telefone"
+                  inputMode="numeric"
+                  label="WhatsApp"
                   onBlur={field.onBlur}
-                  onChange={field.onChange}
+                  // biome-ignore lint/performance/noJsxPropsBind: mask needs the input event to format the value before updating form state
+                  onChange={(event) =>
+                    field.onChange(formatWhatsApp(event.target.value))
+                  }
                   placeholder="(11) 99999-8888"
                   ref={field.ref}
                   required
@@ -169,17 +189,18 @@ function CreateLeadPage() {
 
             <Controller
               control={control}
-              name="jobTitle"
+              name="location"
               // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
               render={({ field }) => (
                 <FormField
-                  error={errors.jobTitle?.message}
-                  id="jobTitle"
-                  label="Cargo"
+                  error={errors.location?.message}
+                  id="location"
+                  label="Localização"
                   onBlur={field.onBlur}
                   onChange={field.onChange}
-                  placeholder="Ex: Gerente Geral / Síndico"
+                  placeholder="Ex: São Paulo, SP — Centro"
                   ref={field.ref}
+                  required
                   type="text"
                   value={field.value}
                 />
@@ -232,10 +253,15 @@ function CreateLeadPage() {
                       id="responsibleId"
                       onBlur={field.onBlur}
                       onChange={field.onChange}
-                      value={field.value}
+                      value={field.value ?? ""}
                     >
                       <option value="">Atribuir a um vendedor</option>
-                      {SELLER_OPTIONS.map((seller) => (
+                      {sellersQuery.isPending ? (
+                        <option disabled value="">
+                          Carregando vendedores...
+                        </option>
+                      ) : null}
+                      {sellersQuery.data?.map((seller) => (
                         <option key={seller.id} value={seller.id}>
                           {seller.name}
                         </option>
@@ -255,7 +281,7 @@ function CreateLeadPage() {
                   <FormField
                     error={errors.description?.message}
                     id="description"
-                    label="Observações e Histórico Preliminar"
+                    label="Observações"
                   >
                     <Textarea
                       error={errors.description?.message}
@@ -280,7 +306,9 @@ function CreateLeadPage() {
             >
               Cancelar
             </Button>
-            <Button type="submit">Salvar Lead</Button>
+            <Button loading={createLeadMutation.isPending} type="submit">
+              Salvar Lead
+            </Button>
           </div>
         </form>
       </main>
