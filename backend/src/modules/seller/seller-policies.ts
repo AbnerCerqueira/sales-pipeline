@@ -1,18 +1,19 @@
 import { ApplicationError } from "../../utils/errors.ts";
+import { HttpStatus } from "../../utils/http-status.ts";
 import type { Seller } from "./seller.ts";
 import type { SellerRepository } from "./seller-repository.ts";
 import type { PasswordHasher } from "./services/password-hasher.ts";
 
 export class InvalidCredentialsError extends ApplicationError {
   constructor() {
-    super(401, "Invalid email or password");
+    super(HttpStatus.UNAUTHORIZED, "Invalid email or password");
     this.name = "InvalidCredentialsError";
   }
 }
 
 export class EmailTakenError extends ApplicationError {
   constructor() {
-    super(409, "Email already taken");
+    super(HttpStatus.CONFLICT, "Email already taken");
     this.name = "EmailTakenError";
   }
 }
