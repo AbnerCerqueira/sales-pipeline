@@ -6,6 +6,8 @@ import {
 } from "@fastify/type-provider-zod";
 import fastify from "fastify";
 import { z } from "zod";
+import jwtPlugin from "./lib/jwt.ts";
+import { sellerRoutes } from "./modules/seller/routes/seller-route.ts";
 import { logger } from "./utils/logger.ts";
 
 export const app = fastify({ loggerInstance: logger })
@@ -14,6 +16,9 @@ export const app = fastify({ loggerInstance: logger })
   .withTypeProvider<ZodTypeProvider>();
 
 app.register(fastifyCors);
+app.register(jwtPlugin);
+
+app.register(sellerRoutes, { prefix: "/seller" });
 
 app.get(
   "/health-check",

@@ -1,5 +1,6 @@
 import type { Seller } from "./seller.ts";
 
 export interface SellerRepository {
-  save: (seller: Seller) => Promise<Seller>;
+  create: (seller: Seller) => Promise<void>;
+  findByEmail: (email: string) => Promise<Seller | null>;
 }

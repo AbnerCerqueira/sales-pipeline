@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { env } from "../config/envs.ts";
-import type { PasswordHasher } from "../modules/seller/password-hasher.ts";
+import type { PasswordHasher } from "../modules/seller/services/password-hasher.ts";
 
 const SALT_ROUNDS = 12;
 

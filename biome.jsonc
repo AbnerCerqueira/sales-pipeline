@@ -13,6 +13,18 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/test/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUndeclaredVariables": {
+              "level": "off"
+            }
+          }
+        }
+      }
     }
   ]
 }
