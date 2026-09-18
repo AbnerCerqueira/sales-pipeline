@@ -33,6 +33,15 @@ As próximas linhas são boas práticas, não exatamente uma série de regras
 - `backend`: API, regras de negócio, persistência.
 - `frontend`: renderização dos dados.
 
+# Testes
+
+- Framework é `vitest`, com dois projetos em `backend/vitest.config.ts`:
+  - **unit** (`backend/test/**/unit/`): sem banco, use fakes manuais implementando as interfaces (ex: `FakeSellerRepository`), sem mocks de libs
+  - **e2e** (`backend/test/**/e2e/`): Postgres real via testcontainers, requisições com `app.inject()` do Fastify, sem servidor aberto
+- Teste na camada que faz sentido: não repita cobertura. Use case que só repassa pro repository é testado pelo e2e; escreva teste unitário só quando houver lógica própria (policies, regras, transformações)
+- Helpers de e2e ficam em `backend/test/<modulo>/e2e/helpers.ts` e as URLs centralizadas em `routes.ts`
+- Evite testes que não agregam valor, tipo testar código de erro validado que é validado por schema ao invés de regras no código
+
 # Antes de entregar
 
 - Rode os testes relevante e build para a feature implementada
