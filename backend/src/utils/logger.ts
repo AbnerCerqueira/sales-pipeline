@@ -8,7 +8,7 @@ const LOG_FILE_PATH = join(import.meta.dirname, "../../logs/app.log");
 
 const targets: TransportTargetOptions[] = [];
 
-if (NODE_ENV !== "prod") {
+if (NODE_ENV === "dev") {
   targets.push(
     {
       level,
