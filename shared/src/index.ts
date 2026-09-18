@@ -12,6 +12,16 @@ export {
   type LeadSource,
   leadSourceSchema,
 } from "./schemas/lead/lead.ts";
+export {
+  type SearchLeadsQuery,
+  type SearchLeadsResponse,
+  searchLeadsQuerySchema,
+  searchLeadsResponseSchema,
+} from "./schemas/lead/search.ts";
+export {
+  type PaginatedResult,
+  paginatedResultSchema,
+} from "./schemas/pagination.ts";
 export { listSellersResponseSchema } from "./schemas/seller/list.ts";
 export {
   type LoginInput,

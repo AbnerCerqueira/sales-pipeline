@@ -1,5 +1,9 @@
+import type { PaginatedResult } from "@sales/shared";
 import type { Lead } from "../../src/modules/lead/lead.ts";
-import type { LeadRepository } from "../../src/modules/lead/lead-repository.ts";
+import type {
+  LeadRepository,
+  LeadWithResponsible,
+} from "../../src/modules/lead/lead-repository.ts";
 
 export class MockLeadRepository implements LeadRepository {
   private existingLead: Lead | null = null;
@@ -18,5 +22,9 @@ export class MockLeadRepository implements LeadRepository {
 
   findById() {
     return Promise.resolve(this.existingLead);
+  }
+
+  search(): Promise<PaginatedResult<LeadWithResponsible>> {
+    return Promise.resolve({ items: [], page: 1, pageSize: 10, total: 0 });
   }
 }

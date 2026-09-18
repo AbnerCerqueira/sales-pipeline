@@ -33,7 +33,7 @@ export class DrizzleSellerRepository implements SellerRepository {
       return null;
     }
 
-    return toDomain(row);
+    return sellerToDomain(row);
   }
 
   async findById(id: string) {
@@ -47,7 +47,7 @@ export class DrizzleSellerRepository implements SellerRepository {
       return null;
     }
 
-    return toDomain(row);
+    return sellerToDomain(row);
   }
 
   async findMany() {
@@ -56,11 +56,11 @@ export class DrizzleSellerRepository implements SellerRepository {
       .from(sellersTable)
       .orderBy(sellersTable.name);
 
-    return rows.map(toDomain);
+    return rows.map(sellerToDomain);
   }
 }
 
-function toDomain(row: typeof sellersTable.$inferSelect) {
+export function sellerToDomain(row: typeof sellersTable.$inferSelect) {
   return Seller.fromPersistence(
     {
       email: row.email,

@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
-import type { LeadSource } from "@sales/shared";
+import type { LeadSource, SearchLeadsQuery } from "@sales/shared";
 import { app } from "../../../src/app.ts";
 import { createSellerViaHttp } from "../../seller/e2e/helpers.ts";
 import { LeadRoutes } from "./routes.ts";
-
 export type LeadPayload = {
   companyName: string;
   description: string;
@@ -42,4 +41,14 @@ export function createLeadViaHttp(overrides?: Partial<LeadPayload>) {
       url: LeadRoutes.POST.CREATE,
     })
   );
+}
+
+export function searchLeadsViaHttp(query?: Partial<SearchLeadsQuery>) {
+  return app.inject({
+    method: "GET",
+    query: Object.fromEntries(
+      Object.entries(query ?? {}).map(([key, value]) => [key, String(value)])
+    ),
+    url: LeadRoutes.GET.SEARCH,
+  });
 }
