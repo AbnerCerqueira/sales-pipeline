@@ -6,6 +6,7 @@ import {
   sellerDTOSchema,
 } from "@sales/shared";
 import { HttpStatus } from "../../../utils/http-status.ts";
+import { SwaggerTag } from "../../../utils/swagger-tags.ts";
 import { loginUseCase, registerUseCase } from "../instances.ts";
 
 export const sellerRoutes: FastifyPluginCallbackZod = (app) => {
@@ -14,9 +15,12 @@ export const sellerRoutes: FastifyPluginCallbackZod = (app) => {
     {
       schema: {
         body: loginSchema,
+        description: "Realiza login e retorna um token JWT",
         response: {
           [HttpStatus.OK]: loginResponseSchema,
         },
+        summary: "Autenticar seller",
+        tags: [SwaggerTag.SELLER],
       },
     },
     async (request, reply) => {
@@ -38,9 +42,12 @@ export const sellerRoutes: FastifyPluginCallbackZod = (app) => {
     {
       schema: {
         body: registerSchema,
+        description: "Cria uma nova conta de seller",
         response: {
           [HttpStatus.CREATED]: sellerDTOSchema,
         },
+        summary: "Cadastrar seller",
+        tags: [SwaggerTag.SELLER],
       },
     },
     async (request, reply) => {

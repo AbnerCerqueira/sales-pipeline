@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { db } from "../config/db.ts";
 import { BcryptPasswordHasher } from "../lib/bcrypt-password-hasher.ts";
-import { sellersTable } from "../modules/seller/persistence/seller-table.ts";
+import { sellersTable } from "../modules/seller/persistence/drizzle/seller-table.ts";
 
 const DEFAULT_SELLER = {
   email: "john@example.com",
