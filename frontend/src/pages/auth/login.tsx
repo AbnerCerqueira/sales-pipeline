@@ -79,7 +79,11 @@ function LoginPage() {
             )}
           />
 
-          <Button loading={loginMutation.isPending} type="submit">
+          <Button
+            className="w-full"
+            loading={loginMutation.isPending}
+            type="submit"
+          >
             Entrar no CRM
           </Button>
         </form>

@@ -141,7 +141,11 @@ function RegisterPage() {
             )}
           />
 
-          <Button loading={registerMutation.isPending} type="submit">
+          <Button
+            className="w-full"
+            loading={registerMutation.isPending}
+            type="submit"
+          >
             Criar conta
           </Button>
         </form>

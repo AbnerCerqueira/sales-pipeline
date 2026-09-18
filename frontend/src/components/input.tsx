@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useCallback, useState } from "react";
+import { fieldBorder } from "../lib/field-styles.ts";
 
 interface InputProps extends ComponentProps<"input"> {
   counter?: string;
@@ -19,7 +20,7 @@ function Input({ className, error, counter, type, ...props }: InputProps) {
   return (
     <div className="relative">
       <input
-        className={`w-full rounded-lg border bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors ${isPassword ? "pr-10" : ""} ${counter ? "pr-14" : ""} ${error ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500" : "border-zinc-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"} ${className ?? ""}`}
+        className={`w-full rounded-lg border bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors ${isPassword ? "pr-10" : ""} ${counter ? "pr-14" : ""} ${fieldBorder(error)} ${className ?? ""}`}
         type={inputType}
         {...props}
       />

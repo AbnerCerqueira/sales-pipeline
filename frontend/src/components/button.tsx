@@ -2,18 +2,26 @@ import type { ComponentProps } from "react";
 
 interface ButtonProps extends ComponentProps<"button"> {
   loading?: boolean;
+  variant?: "primary" | "secondary";
 }
+
+const VARIANTS = {
+  primary: "bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700",
+  secondary:
+    "border border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 active:bg-zinc-600",
+} as const;
 
 function Button({
   className,
   loading = false,
   disabled,
+  variant = "primary",
   children,
   ...props
 }: ButtonProps) {
   return (
     <button
-      className={`flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-2.5 font-semibold text-sm text-white transition-colors hover:bg-orange-600 active:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50 ${className ?? ""}`}
+      className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-semibold text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className ?? ""}`}
       disabled={disabled || loading}
       {...props}
     >
