@@ -25,3 +25,5 @@ jobs:
       - run: pnpm -r run typecheck
 
       - run: pnpm build
+
+      - run: pnpm --filter @sales/api test
