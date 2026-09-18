@@ -1,4 +1,8 @@
 export {
+  type LeadSource,
+  leadSourceSchema,
+} from "./schemas/lead/lead.ts";
+export {
   type LoginInput,
   type LoginResponse,
   loginResponseSchema,
