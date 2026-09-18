@@ -3,10 +3,9 @@ import { Entity, type Timestamps } from "../../utils/entity.ts";
 
 export type LeadProps = {
   companyName: string;
-  description: string;
+  description: string | null;
   email: string;
   fullName: string;
-  location: string;
   responsibleId: string;
   source: LeadSource;
   whatsapp: string;
@@ -33,15 +32,11 @@ export class Lead extends Entity<LeadProps> {
     return this.props.whatsapp;
   }
 
-  get location(): string {
-    return this.props.location;
-  }
-
   get source(): LeadSource {
     return this.props.source;
   }
 
-  get description(): string {
+  get description(): string | null {
     return this.props.description;
   }
 
@@ -57,7 +52,6 @@ export class Lead extends Entity<LeadProps> {
       email: this.email,
       fullName: this.fullName,
       id: this.id,
-      location: this.location,
       responsible,
       responsibleId: this.responsibleId,
       source: this.source,

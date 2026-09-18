@@ -12,11 +12,10 @@ export type LeadResponsible = z.infer<typeof leadResponsibleSchema>;
 export const leadDTOSchema = z.object({
   companyName: z.string(),
   createdAt: z.coerce.date(),
-  description: z.string(),
+  description: z.string().nullable(),
   email: z.email(),
   fullName: z.string(),
   id: z.string(),
-  location: z.string(),
   responsible: leadResponsibleSchema,
   responsibleId: z.string(),
   source: leadSourceSchema,

@@ -5,10 +5,9 @@ import { createSellerViaHttp } from "../../seller/e2e/helpers.ts";
 import { LeadRoutes } from "./routes.ts";
 export type LeadPayload = {
   companyName: string;
-  description: string;
+  description: string | null;
   email: string;
   fullName: string;
-  location: string;
   responsibleId: string;
   source: LeadSource;
   whatsapp: string;
@@ -25,7 +24,6 @@ export async function createLeadPayload(
     description: "Potential client",
     email: `lead+${suffix}@example.com`,
     fullName: `Lead ${suffix}`,
-    location: "São Paulo, SP",
     responsibleId: seller.id,
     source: "inbound",
     whatsapp: "(11) 99999-0000",

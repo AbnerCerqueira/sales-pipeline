@@ -49,7 +49,6 @@ function CreateLeadPage() {
       description: "",
       email: "",
       fullName: "",
-      location: "",
       responsibleId: "",
       whatsapp: "",
     },
@@ -189,26 +188,6 @@ function CreateLeadPage() {
 
             <Controller
               control={control}
-              name="location"
-              // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-              render={({ field }) => (
-                <FormField
-                  error={errors.location?.message}
-                  id="location"
-                  label="Localização"
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  placeholder="Ex: São Paulo, SP — Centro"
-                  ref={field.ref}
-                  required
-                  type="text"
-                  value={field.value}
-                />
-              )}
-            />
-
-            <Controller
-              control={control}
               name="source"
               // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
               render={({ field }) => (
@@ -236,41 +215,39 @@ function CreateLeadPage() {
               )}
             />
 
-            <div className="md:col-span-2">
-              <Controller
-                control={control}
-                name="responsibleId"
-                // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-                render={({ field }) => (
-                  <FormField
+            <Controller
+              control={control}
+              name="responsibleId"
+              // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
+              render={({ field }) => (
+                <FormField
+                  error={errors.responsibleId?.message}
+                  id="responsibleId"
+                  label="Vendedor Responsável"
+                  required
+                >
+                  <Select
                     error={errors.responsibleId?.message}
                     id="responsibleId"
-                    label="Vendedor Responsável"
-                    required
+                    onBlur={field.onBlur}
+                    onChange={field.onChange}
+                    value={field.value ?? ""}
                   >
-                    <Select
-                      error={errors.responsibleId?.message}
-                      id="responsibleId"
-                      onBlur={field.onBlur}
-                      onChange={field.onChange}
-                      value={field.value ?? ""}
-                    >
-                      <option value="">Atribuir a um vendedor</option>
-                      {sellersQuery.isPending ? (
-                        <option disabled value="">
-                          Carregando vendedores...
-                        </option>
-                      ) : null}
-                      {sellersQuery.data?.map((seller) => (
-                        <option key={seller.id} value={seller.id}>
-                          {seller.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
-                )}
-              />
-            </div>
+                    <option value="">Atribuir a um vendedor</option>
+                    {sellersQuery.isPending ? (
+                      <option disabled value="">
+                        Carregando vendedores...
+                      </option>
+                    ) : null}
+                    {sellersQuery.data?.map((seller) => (
+                      <option key={seller.id} value={seller.id}>
+                        {seller.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
+            />
 
             <div className="md:col-span-2">
               <Controller
@@ -289,7 +266,7 @@ function CreateLeadPage() {
                       onBlur={field.onBlur}
                       onChange={field.onChange}
                       placeholder="Ex: Cliente demonstrou interesse inicial em esteiras profissionais..."
-                      value={field.value}
+                      value={field.value ?? ""}
                     />
                   </FormField>
                 )}

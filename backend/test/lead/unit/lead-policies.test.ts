@@ -15,7 +15,6 @@ function createLead() {
     description: "Potential client",
     email: "lead@example.com",
     fullName: "John Lead",
-    location: "São Paulo, SP",
     responsibleId: "seller-id",
     source: "inbound",
     whatsapp: "(11) 99999-0000",

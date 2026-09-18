@@ -33,6 +33,28 @@ describe("Create Lead", () => {
     });
   });
 
+  test("creates lead with null description", async () => {
+    const payload = await createLeadPayload({ description: null });
+
+    const response = await createLeadViaHttp(payload);
+
+    expect(response.statusCode).toBe(HttpStatus.CREATED);
+    expect(response.json<{ description: string | null }>().description).toBe(
+      null
+    );
+  });
+
+  test("normalizes empty description to null", async () => {
+    const payload = await createLeadPayload({ description: "   " });
+
+    const response = await createLeadViaHttp(payload);
+
+    expect(response.statusCode).toBe(HttpStatus.CREATED);
+    expect(response.json<{ description: string | null }>().description).toBe(
+      null
+    );
+  });
+
   test("returns 404 when responsible seller does not exist", async () => {
     const response = await createLeadViaHttp({
       responsibleId: randomUUID(),
