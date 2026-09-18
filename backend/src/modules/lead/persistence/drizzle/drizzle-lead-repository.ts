@@ -28,6 +28,16 @@ export class DrizzleLeadRepository implements LeadRepository {
     });
   }
 
+  async findByEmail(email: string) {
+    const [row] = await this.db
+      .select()
+      .from(leadsTable)
+      .where(eq(leadsTable.email, email))
+      .limit(1);
+
+    return row ? toDomain(row) : null;
+  }
+
   async findById(id: string) {
     const [row] = await this.db
       .select()
@@ -35,23 +45,23 @@ export class DrizzleLeadRepository implements LeadRepository {
       .where(eq(leadsTable.id, id))
       .limit(1);
 
-    if (!row) {
-      return null;
-    }
-
-    return Lead.fromPersistence(
-      {
-        companyName: row.companyName,
-        description: row.description,
-        email: row.email,
-        fullName: row.fullName,
-        location: row.location,
-        responsibleId: row.responsibleId,
-        source: leadSourceSchema.parse(row.source),
-        whatsapp: row.whatsapp,
-      },
-      row.id,
-      { createdAt: row.createdAt, updatedAt: row.updatedAt }
-    );
+    return row ? toDomain(row) : null;
   }
+}
+
+function toDomain(row: typeof leadsTable.$inferSelect) {
+  return Lead.fromPersistence(
+    {
+      companyName: row.companyName,
+      description: row.description,
+      email: row.email,
+      fullName: row.fullName,
+      location: row.location,
+      responsibleId: row.responsibleId,
+      source: leadSourceSchema.parse(row.source),
+      whatsapp: row.whatsapp,
+    },
+    row.id,
+    { createdAt: row.createdAt, updatedAt: row.updatedAt }
+  );
 }

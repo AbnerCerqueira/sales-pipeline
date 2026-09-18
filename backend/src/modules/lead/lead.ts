@@ -1,4 +1,4 @@
-import type { LeadSource } from "@sales/shared";
+import type { LeadDTO, LeadResponsible, LeadSource } from "@sales/shared";
 import { Entity, type Timestamps } from "../../utils/entity.ts";
 
 export type LeadProps = {
@@ -47,6 +47,23 @@ export class Lead extends Entity<LeadProps> {
 
   get responsibleId(): string {
     return this.props.responsibleId;
+  }
+
+  toDTO(responsible: LeadResponsible): LeadDTO {
+    return {
+      companyName: this.companyName,
+      createdAt: this.createdAt,
+      description: this.description,
+      email: this.email,
+      fullName: this.fullName,
+      id: this.id,
+      location: this.location,
+      responsible,
+      responsibleId: this.responsibleId,
+      source: this.source,
+      updatedAt: this.updatedAt,
+      whatsapp: this.whatsapp,
+    };
   }
 
   static create(props: LeadProps, id?: string) {

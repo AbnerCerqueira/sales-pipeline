@@ -10,6 +10,8 @@ export type CreateSellerInput = {
   password: string;
 };
 
+export type CreatedSeller = CreateSellerInput & { id: string };
+
 export function registerViaHttp(input: {
   name: string;
   email: string;
@@ -24,7 +26,7 @@ export function registerViaHttp(input: {
 
 export async function createSellerViaHttp(
   overrides?: Partial<CreateSellerInput>
-): Promise<CreateSellerInput> {
+): Promise<CreatedSeller> {
   const suffix = randomUUID().slice(0, 8);
   const seller: CreateSellerInput = {
     email: overrides?.email ?? `seller+${suffix}@example.com`,
@@ -32,9 +34,12 @@ export async function createSellerViaHttp(
     password: overrides?.password ?? DEFAULT_PASSWORD,
   };
 
-  await registerViaHttp(seller);
+  const response = await registerViaHttp(seller);
 
-  return seller;
+  return {
+    ...seller,
+    id: response.json<{ id: string }>().id,
+  };
 }
 
 export function listSellersViaHttp() {

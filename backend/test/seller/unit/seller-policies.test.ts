@@ -5,10 +5,10 @@ import {
   InvalidCredentialsError,
   SellerPolicies,
 } from "../../../src/modules/seller/seller-policies.ts";
-import type { SellerRepository } from "../../../src/modules/seller/seller-repository.ts";
 import type { PasswordHasher } from "../../../src/modules/seller/services/password-hasher.ts";
+import { MockSellerRepository } from "../../mocks/seller-repository.ts";
 
-class FakePasswordHasher implements PasswordHasher {
+class MockPasswordHasher implements PasswordHasher {
   private result = true;
   readonly calls: { hashedPassword: string; password: string }[] = [];
 
@@ -26,26 +26,6 @@ class FakePasswordHasher implements PasswordHasher {
   }
 }
 
-class FakeSellerRepository implements SellerRepository {
-  private existingSeller: Seller | null = null;
-
-  willFind(seller: Seller | null) {
-    this.existingSeller = seller;
-  }
-
-  create() {
-    return Promise.resolve();
-  }
-
-  findByEmail() {
-    return Promise.resolve(this.existingSeller);
-  }
-
-  findMany() {
-    return Promise.resolve([]);
-  }
-}
-
 function createSeller(overrides?: { password?: string }) {
   return Seller.create({
     email: "john@example.com",
@@ -57,9 +37,9 @@ function createSeller(overrides?: { password?: string }) {
 describe("SellerPolicies", () => {
   describe("assertCredentials", () => {
     it("does not throw when password matches", async () => {
-      const hasher = new FakePasswordHasher();
+      const hasher = new MockPasswordHasher();
       hasher.willReturn(true);
-      const repository = new FakeSellerRepository();
+      const repository = new MockSellerRepository();
       const policies = new SellerPolicies(hasher, repository);
 
       await expect(
@@ -68,9 +48,9 @@ describe("SellerPolicies", () => {
     });
 
     it("calls compare with correct arguments", async () => {
-      const hasher = new FakePasswordHasher();
+      const hasher = new MockPasswordHasher();
       hasher.willReturn(true);
-      const repository = new FakeSellerRepository();
+      const repository = new MockSellerRepository();
       const policies = new SellerPolicies(hasher, repository);
       const seller = createSeller({ password: "stored-hash" });
 
@@ -84,9 +64,9 @@ describe("SellerPolicies", () => {
     });
 
     it("throws InvalidCredentialsError when password does not match", async () => {
-      const hasher = new FakePasswordHasher();
+      const hasher = new MockPasswordHasher();
       hasher.willReturn(false);
-      const repository = new FakeSellerRepository();
+      const repository = new MockSellerRepository();
       const policies = new SellerPolicies(hasher, repository);
 
       await expect(
@@ -102,8 +82,8 @@ describe("SellerPolicies", () => {
 
   describe("assertEmailAvailable", () => {
     it("does not throw when email is not taken", async () => {
-      const hasher = new FakePasswordHasher();
-      const repository = new FakeSellerRepository();
+      const hasher = new MockPasswordHasher();
+      const repository = new MockSellerRepository();
       repository.willFind(null);
       const policies = new SellerPolicies(hasher, repository);
 
@@ -113,8 +93,8 @@ describe("SellerPolicies", () => {
     });
 
     it("throws EmailTakenError when email is already taken", async () => {
-      const hasher = new FakePasswordHasher();
-      const repository = new FakeSellerRepository();
+      const hasher = new MockPasswordHasher();
+      const repository = new MockSellerRepository();
       repository.willFind(createSeller());
       const policies = new SellerPolicies(hasher, repository);
 

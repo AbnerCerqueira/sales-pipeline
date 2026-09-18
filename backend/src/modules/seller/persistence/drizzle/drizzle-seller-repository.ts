@@ -33,15 +33,21 @@ export class DrizzleSellerRepository implements SellerRepository {
       return null;
     }
 
-    return Seller.fromPersistence(
-      {
-        email: row.email,
-        name: row.name,
-        password: row.password,
-      },
-      row.id,
-      { createdAt: row.createdAt, updatedAt: row.updatedAt }
-    );
+    return toDomain(row);
+  }
+
+  async findById(id: string) {
+    const [row] = await this.db
+      .select()
+      .from(sellersTable)
+      .where(eq(sellersTable.id, id))
+      .limit(1);
+
+    if (!row) {
+      return null;
+    }
+
+    return toDomain(row);
   }
 
   async findMany() {
@@ -50,16 +56,18 @@ export class DrizzleSellerRepository implements SellerRepository {
       .from(sellersTable)
       .orderBy(sellersTable.name);
 
-    return rows.map((row) =>
-      Seller.fromPersistence(
-        {
-          email: row.email,
-          name: row.name,
-          password: row.password,
-        },
-        row.id,
-        { createdAt: row.createdAt, updatedAt: row.updatedAt }
-      )
-    );
+    return rows.map(toDomain);
   }
+}
+
+function toDomain(row: typeof sellersTable.$inferSelect) {
+  return Seller.fromPersistence(
+    {
+      email: row.email,
+      name: row.name,
+      password: row.password,
+    },
+    row.id,
+    { createdAt: row.createdAt, updatedAt: row.updatedAt }
+  );
 }

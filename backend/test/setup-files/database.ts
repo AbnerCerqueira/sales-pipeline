@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { leadsTable } from "../../src/modules/lead/persistence/drizzle/lead-table.ts";
 import { sellersTable } from "../../src/modules/seller/persistence/drizzle/seller-table.ts";
 import { withDatabase } from "../utils/database-url.ts";
 
@@ -22,7 +23,7 @@ process.env.DATABASE_URL = withDatabase(adminUrl, databaseName);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle({ client: pool });
 
-const tables = [sellersTable];
+const tables = [leadsTable, sellersTable];
 
 beforeEach(async () => {
   await Promise.all(tables.map((table) => db.delete(table)));

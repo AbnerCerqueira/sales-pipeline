@@ -10,6 +10,7 @@ import {
 import fastify from "fastify";
 import { healthRoutes } from "./health-route.ts";
 import jwtPlugin from "./lib/jwt.ts";
+import { leadRoutes } from "./modules/lead/routes/lead-route.ts";
 import { sellerRoutes } from "./modules/seller/routes/seller-route.ts";
 import { logger } from "./utils/logger.ts";
 
@@ -49,4 +50,5 @@ app.register(swaggerUi, {
 });
 
 app.register(sellerRoutes, { prefix: "/seller" });
+app.register(leadRoutes, { prefix: "/lead" });
 app.register(healthRoutes, { prefix: "/health-check" });
