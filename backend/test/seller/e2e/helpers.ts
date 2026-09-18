@@ -37,6 +37,13 @@ export async function createSellerViaHttp(
   return seller;
 }
 
+export function listSellersViaHttp() {
+  return app.inject({
+    method: "GET",
+    url: SellerRoutes.GET.LIST,
+  });
+}
+
 export function loginViaHttp(input: { email: string; password: string }) {
   return app.inject({
     method: "POST",

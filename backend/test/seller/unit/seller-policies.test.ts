@@ -40,6 +40,10 @@ class FakeSellerRepository implements SellerRepository {
   findByEmail() {
     return Promise.resolve(this.existingSeller);
   }
+
+  findMany() {
+    return Promise.resolve([]);
+  }
 }
 
 function createSeller(overrides?: { password?: string }) {
@@ -90,7 +94,7 @@ describe("SellerPolicies", () => {
       ).rejects.toSatisfy((error) => {
         expect(error).toBeInstanceOf(InvalidCredentialsError);
         expect(error.statusCode).toBe(401);
-        expect(error.message).toBe("Invalid email or password");
+        expect(error.message).toBe("E-mail ou senha inválidos");
         return true;
       });
     });
@@ -119,7 +123,7 @@ describe("SellerPolicies", () => {
       ).rejects.toSatisfy((error) => {
         expect(error).toBeInstanceOf(EmailTakenError);
         expect(error.statusCode).toBe(409);
-        expect(error.message).toBe("Email already taken");
+        expect(error.message).toBe("E-mail já cadastrado");
         return true;
       });
     });
