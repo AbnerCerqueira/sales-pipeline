@@ -1,4 +1,14 @@
 export {
+  type CreateLeadInput,
+  createLeadSchema,
+} from "./schemas/lead/create.ts";
+export {
+  type LeadDTO,
+  type LeadResponsible,
+  leadDTOSchema,
+  leadResponsibleSchema,
+} from "./schemas/lead/dto.ts";
+export {
   type LeadSource,
   leadSourceSchema,
 } from "./schemas/lead/lead.ts";
