@@ -44,9 +44,10 @@ function RegisterPage() {
 
   useEffect(() => {
     if (registerMutation.isSuccess) {
-      navigate("/login");
+      toast("Conta criada com sucesso", "success");
+      setTimeout(() => navigate("/login"), 1500);
     }
-  }, [registerMutation.isSuccess, navigate]);
+  }, [registerMutation.isSuccess, navigate, toast]);
 
   function onSubmit(data: RegisterFormInput) {
     const { confirmPassword: _, ...payload } = data;

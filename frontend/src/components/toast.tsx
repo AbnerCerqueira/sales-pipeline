@@ -1,3 +1,4 @@
+import { CheckCircle2, X, XCircle } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -49,7 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col gap-3">
+      <div className="pointer-events-none fixed right-4 bottom-4 z-50 flex flex-col gap-3">
         {toasts.map((t) => (
           <div
             className={`pointer-events-auto rounded-lg px-6 py-4 font-medium text-base shadow-lg transition-all ${
@@ -60,16 +61,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={t.id}
           >
             <span className="flex items-center gap-3">
+              {t.type === "success" ? (
+                <CheckCircle2 size={18} />
+              ) : (
+                <XCircle size={18} />
+              )}
               {t.message}
               <button
-                onClick={() => dismiss(t.id)}
-                className="ml-2 rounded-full p-0.5 opacity-70 hover:opacity-100 transition-opacity"
                 aria-label="Fechar"
+                className="ml-2 rounded-full p-0.5 opacity-70 transition-opacity hover:opacity-100"
+                // biome-ignore lint/performance/noJsxPropsBind: needs closure over toast id
+                onClick={() => dismiss(t.id)}
+                type="button"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X size={16} />
               </button>
             </span>
           </div>
