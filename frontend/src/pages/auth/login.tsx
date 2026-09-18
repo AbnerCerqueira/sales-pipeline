@@ -1,55 +1,87 @@
-import { useCallback, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { type LoginInput, loginSchema } from "@sales/shared";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import AuthLayout from "../../components/auth-layout.tsx";
 import BrandHeader from "../../components/brand-header.tsx";
 import Button from "../../components/button.tsx";
 import FormField from "../../components/form-field.tsx";
+import { useToast } from "../../components/toast.tsx";
+import { useLoginMutation } from "../../hooks/use-auth.ts";
 
 function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const loginMutation = useLoginMutation();
+  const { toast } = useToast();
 
-  const handleEmailChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
-    []
-  );
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInput>({
+    mode: "onChange",
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handlePasswordChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
-    []
-  );
+  useEffect(() => {
+    if (loginMutation.isError && loginMutation.error) {
+      toast(loginMutation.error.message);
+    }
+  }, [loginMutation.isError, loginMutation.error, toast]);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-  }, []);
+  function onSubmit(data: LoginInput) {
+    loginMutation.mutate(data);
+  }
 
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-8">
         <BrandHeader subtitle="Entre na sua conta para continuar" />
 
-        <form className="w-full space-y-4" onSubmit={handleSubmit}>
-          <FormField
-            id="email"
-            label="E-mail profissional"
-            onChange={handleEmailChange}
-            placeholder="voce@empresa.com.br"
-            required
-            type="email"
-            value={email}
+        <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          <Controller
+            control={control}
+            name="email"
+            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
+            render={({ field }) => (
+              <FormField
+                error={errors.email?.message}
+                id="email"
+                label="E-mail profissional"
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                placeholder="voce@empresa.com.br"
+                ref={field.ref}
+                required
+                type="email"
+                value={field.value}
+              />
+            )}
           />
 
-          <FormField
-            id="password"
-            label="Senha"
-            onChange={handlePasswordChange}
-            placeholder="Sua senha"
-            required
-            type="password"
-            value={password}
+          <Controller
+            control={control}
+            name="password"
+            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
+            render={({ field }) => (
+              <FormField
+                error={errors.password?.message}
+                id="password"
+                label="Senha"
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                placeholder="Sua senha"
+                ref={field.ref}
+                required
+                type="password"
+                value={field.value}
+              />
+            )}
           />
 
-          <Button type="submit">Entrar no CRM</Button>
+          <Button loading={loginMutation.isPending} type="submit">
+            Entrar no CRM
+          </Button>
         </form>
 
         <p className="text-center text-sm text-zinc-400">

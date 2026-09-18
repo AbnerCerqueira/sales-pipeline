@@ -1,5 +1,3 @@
-import z from "zod";
-
 export {
   type LoginInput,
   type LoginResponse,
@@ -11,8 +9,3 @@ export {
   registerSchema,
 } from "./schemas/seller/register.ts";
 export { type SellerDTO, sellerDTOSchema } from "./schemas/seller/seller.ts";
-export const errorResponse = z.object({
-  error: "Conflict",
-  message: "Email already taken",
-  statusCode: 409,
-});

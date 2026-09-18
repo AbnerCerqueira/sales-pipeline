@@ -6,14 +6,14 @@ import type { PasswordHasher } from "./services/password-hasher.ts";
 
 export class InvalidCredentialsError extends ApplicationError {
   constructor() {
-    super(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+    super(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos");
     this.name = "InvalidCredentialsError";
   }
 }
 
 export class EmailTakenError extends ApplicationError {
   constructor() {
-    super(HttpStatus.CONFLICT, "Email already taken");
+    super(HttpStatus.CONFLICT, "E-mail já cadastrado");
     this.name = "EmailTakenError";
   }
 }
