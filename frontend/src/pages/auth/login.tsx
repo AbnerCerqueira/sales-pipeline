@@ -1,18 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type LoginInput, loginSchema } from "@sales/shared";
-import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import AuthLayout from "../../components/auth-layout.tsx";
 import BrandHeader from "../../components/brand-header.tsx";
 import Button from "../../components/button.tsx";
 import FormField from "../../components/form-field.tsx";
-import { useToast } from "../../components/toast.tsx";
 import { useLoginMutation } from "../../hooks/use-auth.ts";
+import { useErrorToast } from "../../hooks/use-error-toast.ts";
 
 function LoginPage() {
   const loginMutation = useLoginMutation();
-  const { toast } = useToast();
+
+  useErrorToast(loginMutation);
 
   const {
     control,
@@ -22,12 +22,6 @@ function LoginPage() {
     mode: "onChange",
     resolver: zodResolver(loginSchema),
   });
-
-  useEffect(() => {
-    if (loginMutation.isError && loginMutation.error) {
-      toast(loginMutation.error.message);
-    }
-  }, [loginMutation.isError, loginMutation.error, toast]);
 
   function onSubmit(data: LoginInput) {
     loginMutation.mutate(data);

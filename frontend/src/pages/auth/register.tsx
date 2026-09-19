@@ -10,6 +10,7 @@ import Button from "../../components/button.tsx";
 import FormField from "../../components/form-field.tsx";
 import { useToast } from "../../components/toast.tsx";
 import { useRegisterMutation } from "../../hooks/use-auth.ts";
+import { useErrorToast } from "../../hooks/use-error-toast.ts";
 
 const registerFormSchema = registerSchema
   .extend({
@@ -27,6 +28,8 @@ function RegisterPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useErrorToast(registerMutation);
+
   const {
     control,
     handleSubmit,
@@ -35,12 +38,6 @@ function RegisterPage() {
     mode: "onChange",
     resolver: zodResolver(registerFormSchema),
   });
-
-  useEffect(() => {
-    if (registerMutation.isError && registerMutation.error) {
-      toast(registerMutation.error.message);
-    }
-  }, [registerMutation.isError, registerMutation.error, toast]);
 
   useEffect(() => {
     if (registerMutation.isSuccess) {
