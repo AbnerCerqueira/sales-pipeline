@@ -54,7 +54,7 @@ function RegisterPage() {
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-8">
-        <BrandHeader subtitle="Crie sua conta corporativa para começar" />
+        <BrandHeader subtitle="Crie sua conta para acessar o sistema" />
 
         <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Controller
@@ -139,7 +139,7 @@ function RegisterPage() {
           />
 
           <Button
-            className="w-full"
+            className="w-full px-4"
             loading={registerMutation.isPending}
             type="submit"
           >

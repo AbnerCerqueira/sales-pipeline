@@ -74,7 +74,7 @@ function LoginPage() {
           />
 
           <Button
-            className="w-full"
+            className="w-full px-4"
             loading={loginMutation.isPending}
             type="submit"
           >

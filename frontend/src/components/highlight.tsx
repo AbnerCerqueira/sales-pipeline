@@ -18,7 +18,7 @@ function Highlight({ query, text }: HighlightProps) {
   return parts.map((part, index) =>
     part.toLowerCase() === match.toLowerCase() ? (
       <mark
-        className="rounded-xs bg-orange-500/25 px-0.5 text-orange-300"
+        className="rounded bg-orange-500/25 px-0.5 text-orange-200"
         // biome-ignore lint/suspicious/noArrayIndexKey: split parts are positional by definition
         key={index}
       >

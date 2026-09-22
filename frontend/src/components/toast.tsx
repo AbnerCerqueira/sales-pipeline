@@ -50,33 +50,29 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed right-4 bottom-4 z-50 flex flex-col gap-3">
+      <div className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
         {toasts.map((t) => (
           <div
-            className={`pointer-events-auto rounded-lg px-6 py-4 font-medium text-base shadow-lg transition-all ${
-              t.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-emerald-500 text-white"
-            }`}
+            className="pointer-events-auto flex animate-slide-up items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/95 px-4 py-3 shadow-black/40 shadow-xl ring-1 ring-white/5 backdrop-blur-sm"
             key={t.id}
           >
-            <span className="flex items-center gap-3">
-              {t.type === "success" ? (
-                <CheckCircle2 size={18} />
-              ) : (
-                <XCircle size={18} />
-              )}
+            {t.type === "success" ? (
+              <CheckCircle2 className="shrink-0 text-emerald-400" size={18} />
+            ) : (
+              <XCircle className="shrink-0 text-red-400" size={18} />
+            )}
+            <p className="min-w-0 flex-1 font-medium text-sm text-zinc-200">
               {t.message}
-              <button
-                aria-label="Fechar"
-                className="ml-2 rounded-full p-0.5 opacity-70 transition-opacity hover:opacity-100"
-                // biome-ignore lint/performance/noJsxPropsBind: needs closure over toast id
-                onClick={() => dismiss(t.id)}
-                type="button"
-              >
-                <X size={16} />
-              </button>
-            </span>
+            </p>
+            <button
+              aria-label="Fechar"
+              className="shrink-0 rounded-md p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+              // biome-ignore lint/performance/noJsxPropsBind: needs closure over toast id
+              onClick={() => dismiss(t.id)}
+              type="button"
+            >
+              <X size={14} />
+            </button>
           </div>
         ))}
       </div>

@@ -1,5 +1,6 @@
 export function fieldBorder(error?: string) {
-  return error
-    ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-    : "border-zinc-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500";
+  if (error) {
+    return "border-red-500/60 hover:bg-zinc-900 focus:border-red-400 focus:bg-zinc-900 focus:ring-2 focus:ring-red-500/15";
+  }
+  return "border-zinc-800 hover:bg-zinc-900 focus:border-orange-500/60 focus:bg-zinc-900 focus:ring-2 focus:ring-orange-500/15";
 }

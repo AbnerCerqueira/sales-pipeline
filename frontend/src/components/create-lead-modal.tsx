@@ -76,10 +76,14 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
   }
 
   return (
-    <Modal onClose={handleClose} title="Novo Lead">
+    <Modal
+      onClose={handleClose}
+      subtitle="Preencha os dados do potencial cliente"
+      title="Novo Lead"
+    >
       <form noValidate onSubmit={handleSubmit(onSubmit)}>
-        <h2 className="font-semibold text-lg text-white">
-          Informações Gerais do Contato
+        <h2 className="font-semibold text-[11px] text-zinc-500 uppercase tracking-widest">
+          Informações do contato
         </h2>
 
         <div className="mt-6 grid grid-cols-1 gap-x-6 md:grid-cols-2">
@@ -255,11 +259,20 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
           </div>
         </div>
 
-        <div className="mt-4 flex justify-end gap-3">
-          <Button onClick={handleClose} type="button" variant="secondary">
+        <div className="mt-2 flex justify-end gap-3 border-zinc-800/60 border-t pt-5">
+          <Button
+            className="px-4"
+            onClick={handleClose}
+            type="button"
+            variant="secondary"
+          >
             Cancelar
           </Button>
-          <Button loading={createLeadMutation.isPending} type="submit">
+          <Button
+            className="px-5"
+            loading={createLeadMutation.isPending}
+            type="submit"
+          >
             Salvar Lead
           </Button>
         </div>

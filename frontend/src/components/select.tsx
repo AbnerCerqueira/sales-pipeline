@@ -12,7 +12,7 @@ function Select({ className, error, value, ...props }: SelectProps) {
   return (
     <div className="relative">
       <select
-        className={`w-full appearance-none rounded-lg border bg-zinc-800 px-4 py-2.5 pr-10 text-sm outline-none transition-colors ${
+        className={`w-full cursor-pointer appearance-none rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-2.5 pr-10 text-sm shadow-black/10 shadow-sm outline-none transition-colors duration-150 disabled:opacity-50 ${
           isEmpty ? "text-zinc-500" : "text-zinc-100"
         } ${fieldBorder(error)} ${className ?? ""}`}
         value={value}

@@ -20,7 +20,7 @@ function Input({ className, error, counter, type, ...props }: InputProps) {
   return (
     <div className="relative">
       <input
-        className={`w-full rounded-lg border bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors ${isPassword ? "pr-10" : ""} ${counter ? "pr-14" : ""} ${fieldBorder(error)} ${className ?? ""}`}
+        className={`w-full rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 shadow-black/10 shadow-sm outline-none transition-colors duration-150 disabled:opacity-50 ${isPassword ? "pr-10" : ""} ${counter ? "pr-14" : ""} ${fieldBorder(error)} ${className ?? ""}`}
         type={inputType}
         {...props}
       />

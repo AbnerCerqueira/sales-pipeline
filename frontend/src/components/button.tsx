@@ -6,9 +6,10 @@ interface ButtonProps extends ComponentProps<"button"> {
 }
 
 const VARIANTS = {
-  primary: "bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700",
+  primary:
+    "border border-orange-400/20 bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-950/40 hover:from-orange-400 hover:to-orange-600 hover:shadow-orange-950/60 active:from-orange-600 active:to-orange-700",
   secondary:
-    "border border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 active:bg-zinc-600",
+    "border border-zinc-800 bg-zinc-900 text-zinc-300 shadow-sm shadow-black/20 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-800",
 } as const;
 
 function Button({
@@ -21,7 +22,7 @@ function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-semibold text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className ?? ""}`}
+      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-sm transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 ${VARIANTS[variant]} ${className ?? ""}`}
       disabled={disabled || loading}
       {...props}
     >

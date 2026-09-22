@@ -37,11 +37,11 @@ function FormField({
   return (
     <div>
       <label
-        className="mb-1.5 block font-medium text-sm text-zinc-300"
+        className="mb-1 block font-medium text-[13px] text-zinc-400"
         htmlFor={id}
       >
         {label}
-        {required ? <span className="text-orange-500"> *</span> : null}
+        {required ? <span className="ml-0.5 text-orange-400"> *</span> : null}
       </label>
       <div className="mt-1.5">
         {children ?? (
@@ -57,8 +57,8 @@ function FormField({
           />
         )}
       </div>
-      <div className="mt-1 h-5">
-        {error ? <p className="text-red-500 text-xs">{error}</p> : null}
+      <div className="mt-1 min-h-5">
+        {error ? <p className="text-red-400 text-xs">{error}</p> : null}
       </div>
     </div>
   );
