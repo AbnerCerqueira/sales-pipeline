@@ -1,16 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type LoginInput, loginSchema } from "@sales/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth-layout.tsx";
 import BrandHeader from "../../components/brand-header.tsx";
 import Button from "../../components/button.tsx";
 import FormField from "../../components/form-field.tsx";
+import { useAuth } from "../../context/auth.tsx";
 import { useLoginMutation } from "../../hooks/use-auth.ts";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 
 function LoginPage() {
   const loginMutation = useLoginMutation();
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useErrorToast(loginMutation);
 
@@ -24,7 +29,13 @@ function LoginPage() {
   });
 
   function onSubmit(data: LoginInput) {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onSuccess: ({ token }) => {
+        queryClient.clear();
+        login(token);
+        navigate("/leads", { replace: true });
+      },
+    });
   }
 
   return (

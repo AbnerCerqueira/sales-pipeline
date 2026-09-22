@@ -4,7 +4,7 @@ import type {
   RegisterInput,
   SellerDTO,
 } from "@sales/shared";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api.ts";
 
 export function useLoginMutation() {
@@ -18,5 +18,12 @@ export function useRegisterMutation() {
   return useMutation({
     mutationFn: (data: RegisterInput) =>
       api.post<SellerDTO>("/seller/register", data),
+  });
+}
+
+export function useMeQuery() {
+  return useQuery({
+    queryFn: () => api.get<SellerDTO>("/seller/me"),
+    queryKey: ["me"],
   });
 }

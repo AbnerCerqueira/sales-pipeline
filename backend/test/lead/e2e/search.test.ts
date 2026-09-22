@@ -1,7 +1,9 @@
 import type { LeadDTO, SearchLeadsResponse } from "@sales/shared";
+import { app } from "../../../src/app.ts";
 import { HttpStatus } from "../../../src/utils/http-status.ts";
 import { createSellerViaHttp } from "../../seller/e2e/helpers.ts";
 import { createLeadViaHttp, searchLeadsViaHttp } from "./helpers.ts";
+import { LeadRoutes } from "./routes.ts";
 
 describe("Search Leads", () => {
   test("returns only leads whose name contains the searched characters", async () => {
@@ -127,5 +129,14 @@ describe("Search Leads", () => {
     const body = response.json<SearchLeadsResponse>();
     expect(body.items).toEqual([]);
     expect(body.total).toBe(0);
+  });
+
+  test("returns 401 when token is missing", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: LeadRoutes.GET.SEARCH,
+    });
+
+    expect(response.statusCode).toBe(HttpStatus.UNAUTHORIZED);
   });
 });

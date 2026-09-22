@@ -13,19 +13,20 @@ export const leadRoutes: FastifyPluginCallbackZod = (app) => {
   app.post(
     "/",
     {
+      preHandler: [app.authenticate],
       schema: {
         body: createLeadSchema,
         description: "Cadastra um novo lead vinculado a um seller responsável",
         response: {
           [HttpStatus.CREATED]: leadDTOSchema,
         },
+        security: [{ bearerAuth: [] }],
         summary: "Cadastrar lead",
         tags: [SwaggerTag.LEAD],
       },
     },
     async (request, reply) => {
       const lead = await createLeadUseCase.execute(request.body);
-
       return reply.status(HttpStatus.CREATED).send(lead);
     }
   );
@@ -33,12 +34,14 @@ export const leadRoutes: FastifyPluginCallbackZod = (app) => {
   app.get(
     "/search",
     {
+      preHandler: [app.authenticate],
       schema: {
         description: "Busca leads por parte do nome e/ou seller responsável",
         querystring: searchLeadsQuerySchema,
         response: {
           [HttpStatus.OK]: searchLeadsResponseSchema,
         },
+        security: [{ bearerAuth: [] }],
         summary: "Buscar leads",
         tags: [SwaggerTag.LEAD],
       },

@@ -23,6 +23,7 @@ Registro das decisões de design do projeto, organizadas por tópico e contando 
 | [ADR-003](padroes-de-codigo/003-policy-classes.md) | Policy classes para regras de negócio | Aceito |
 | [ADR-004](padroes-de-codigo/004-tratamento-erros.md) | Erros de negócio como `ApplicationError` | Aceito |
 | [ADR-005](padroes-de-codigo/005-acoplamento-infra.md) | Acoplamento deliberado com infraestrutura | Aceito |
+| [ADR-006](padroes-de-codigo/006-token-em-localstorage.md) | Token de sessão em `localStorage` com header `Authorization` | Aceito |
 
 ## `features/` — decisões de funcionalidade
 

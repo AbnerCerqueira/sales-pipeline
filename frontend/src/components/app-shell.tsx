@@ -1,6 +1,15 @@
-import { Handshake, LayoutGrid, UserRoundCog, Users } from "lucide-react";
+import {
+  Handshake,
+  LayoutGrid,
+  LogOut,
+  UserRoundCog,
+  Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/auth.tsx";
+import { useMeQuery } from "../hooks/use-auth.ts";
+import { useErrorToast } from "../hooks/use-error-toast.ts";
 
 const NAV_ITEMS = [
   { icon: LayoutGrid, label: "Dashboard", to: "/dashboard" },
@@ -8,11 +17,6 @@ const NAV_ITEMS = [
   { icon: Handshake, label: "Negócios", to: "/deals" },
   { icon: UserRoundCog, label: "Vendedores", to: "/sellers" },
 ];
-
-const CURRENT_USER = {
-  name: "Rodrigo Ramos",
-  role: "Diretor de Vendas",
-};
 
 interface AppShellProps {
   children: ReactNode;
@@ -27,9 +31,15 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 }
 
 function AppShell({ children }: AppShellProps) {
-  const initials = CURRENT_USER.name
+  const meQuery = useMeQuery();
+  const { logout } = useAuth();
+  const seller = meQuery.data;
+  useErrorToast(meQuery);
+  const displayName = seller?.name ?? "…";
+  const initials = displayName
     .split(" ")
     .map((part) => part[0])
+    .filter(Boolean)
     .slice(0, 2)
     .join("")
     .toUpperCase();
@@ -58,21 +68,41 @@ function AppShell({ children }: AppShellProps) {
             {initials}
             <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-emerald-500" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-sm text-white">
-              {CURRENT_USER.name}
+              {displayName}
             </p>
             <p className="truncate text-xs text-zinc-500">
-              {CURRENT_USER.role}
+              {seller?.email ?? " "}
             </p>
           </div>
+          <button
+            aria-label="Sair"
+            className="shrink-0 rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+            onClick={logout}
+            title="Sair"
+            type="button"
+          >
+            <LogOut size={16} strokeWidth={2.2} />
+          </button>
         </div>
       </aside>
 
       <header className="sticky top-0 z-10 flex items-center justify-between border-zinc-800/60 border-b bg-zinc-950/80 px-4 py-3 backdrop-blur-md md:hidden">
         <Wordmark />
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 font-semibold text-white text-xs shadow-md shadow-orange-950/40">
-          {initials}
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 font-semibold text-white text-xs shadow-md shadow-orange-950/40">
+            {initials}
+          </div>
+          <button
+            aria-label="Sair"
+            className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+            onClick={logout}
+            title="Sair"
+            type="button"
+          >
+            <LogOut size={16} strokeWidth={2.2} />
+          </button>
         </div>
       </header>
 

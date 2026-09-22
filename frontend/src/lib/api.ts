@@ -1,18 +1,72 @@
+import {
+  clearAuthToken,
+  getAuthToken,
+  notifySessionExpired,
+  SESSION_EXPIRED_MESSAGE,
+} from "./token.ts";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3333";
 
+export class SessionExpiredError extends Error {
+  constructor() {
+    super(SESSION_EXPIRED_MESSAGE);
+  }
+}
+
+function authHeaders(token: string | null): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+async function parseBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function errorMessage(body: unknown): string {
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "message" in body &&
+    typeof body.message === "string"
+  ) {
+    return body.message;
+  }
+  return "Erro desconhecido";
+}
+
+function expireSession(sentToken: string): never {
+  if (getAuthToken() === sentToken) {
+    clearAuthToken();
+    notifySessionExpired();
+  }
+  throw new SessionExpiredError();
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getAuthToken();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers: { ...authHeaders(token), ...options?.headers },
   });
 
-  const body = await response.json();
+  const body = await parseBody(response);
 
   if (!response.ok) {
-    throw new Error(body.message ?? "Erro desconhecido");
+    if (response.status === 401 && token) {
+      expireSession(token);
+    }
+    throw new Error(errorMessage(body));
   }
 
   return body as T;

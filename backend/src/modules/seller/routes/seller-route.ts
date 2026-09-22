@@ -40,11 +40,13 @@ export const sellerRoutes: FastifyPluginCallbackZod = (app) => {
   app.get(
     "/",
     {
+      preHandler: [app.authenticate],
       schema: {
         description: "Lista todos os sellers cadastrados",
         response: {
           [HttpStatus.OK]: listSellersResponseSchema,
         },
+        security: [{ bearerAuth: [] }],
         summary: "Listar sellers",
         tags: [SwaggerTag.SELLER],
       },

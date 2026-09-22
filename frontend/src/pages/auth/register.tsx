@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "@sales/shared";
-import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -39,16 +38,14 @@ function RegisterPage() {
     resolver: zodResolver(registerFormSchema),
   });
 
-  useEffect(() => {
-    if (registerMutation.isSuccess) {
-      toast("Conta criada com sucesso", "success");
-      setTimeout(() => navigate("/login"), 1500);
-    }
-  }, [registerMutation.isSuccess, navigate, toast]);
-
   function onSubmit(data: RegisterFormInput) {
     const { confirmPassword: _, ...payload } = data;
-    registerMutation.mutate(payload);
+    registerMutation.mutate(payload, {
+      onSuccess: () => {
+        toast("Conta criada com sucesso", "success");
+        navigate("/login", { replace: true });
+      },
+    });
   }
 
   return (

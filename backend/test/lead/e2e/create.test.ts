@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { app } from "../../../src/app.ts";
 import { HttpStatus } from "../../../src/utils/http-status.ts";
 import { createLeadPayload, createLeadViaHttp } from "./helpers.ts";
+import { LeadRoutes } from "./routes.ts";
 
 describe("Create Lead", () => {
   test("creates lead and returns 201 with lead data", async () => {
@@ -73,5 +75,26 @@ describe("Create Lead", () => {
     });
 
     expect(response.statusCode).toBe(HttpStatus.CONFLICT);
+  });
+
+  test("returns 401 when token is missing", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const payload = {
+      companyName: `Company ${suffix}`,
+      description: null,
+      email: `lead+${suffix}@example.com`,
+      fullName: `Lead ${suffix}`,
+      responsibleId: randomUUID(),
+      source: "inbound",
+      whatsapp: "(11) 99999-0000",
+    };
+
+    const response = await app.inject({
+      method: "POST",
+      payload,
+      url: LeadRoutes.POST.CREATE,
+    });
+
+    expect(response.statusCode).toBe(HttpStatus.UNAUTHORIZED);
   });
 });

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { app } from "../../../src/app.ts";
 import { SellerRoutes } from "./routes.ts";
 
-const DEFAULT_PASSWORD = "secret123";
+export const DEFAULT_PASSWORD = "secret123";
 
 export type CreateSellerInput = {
   email: string;
@@ -42,8 +42,9 @@ export async function createSellerViaHttp(
   };
 }
 
-export function listSellersViaHttp() {
+export function listSellersViaHttp(token?: string) {
   return app.inject({
+    headers: token ? { authorization: `Bearer ${token}` } : undefined,
     method: "GET",
     url: SellerRoutes.GET.LIST,
   });
@@ -68,18 +69,14 @@ export function loginViaHttp(input: { email: string; password: string }) {
 export async function registerAndLogin() {
   const suffix = randomUUID().slice(0, 8);
   const email = `seller+${suffix}@example.com`;
+  const name = `Seller ${suffix}`;
   const password = DEFAULT_PASSWORD;
 
-  await registerViaHttp({
-    email,
-    name: `Seller ${suffix}`,
-    password,
-  });
-
+  await registerViaHttp({ email, name, password });
   const response = await loginViaHttp({ email, password });
 
   return {
-    seller: { email, name: `Seller ${suffix}`, password },
+    seller: { email, name, password },
     token: response.json<{ token: string }>().token,
   };
 }
