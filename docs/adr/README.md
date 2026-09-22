@@ -13,6 +13,7 @@ Registro das decisões de design do projeto, organizadas por tópico e contando 
 | [ADR-005](fundacao/005-fastify.md) | Fastify como framework HTTP | Aceito |
 | [ADR-006](fundacao/006-zod-shared.md) | Schemas Zod no pacote shared | Aceito |
 | [ADR-007](fundacao/007-client-side-rendering.md) | Client-side rendering ao invés de SSR | Aceito |
+| [ADR-008](fundacao/008-numeric-dinheiro.md) | Dinheiro em `numeric(12, 2)` | Aceito |
 
 ## `padroes-de-codigo/` — como o código é escrito
 

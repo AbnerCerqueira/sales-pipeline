@@ -1,4 +1,15 @@
 export {
+  type CreateDealInput,
+  createDealSchema,
+} from "./schemas/deal/create.ts";
+export { type DealStatus, dealStatusSchema } from "./schemas/deal/deal.ts";
+export {
+  type DealDTO,
+  type DealResponsible,
+  dealDTOSchema,
+  dealResponsibleSchema,
+} from "./schemas/deal/dto.ts";
+export {
   type CreateLeadInput,
   createLeadSchema,
 } from "./schemas/lead/create.ts";
