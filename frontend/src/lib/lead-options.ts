@@ -15,10 +15,38 @@ export function formatLeadSource(source: LeadSource): string {
   );
 }
 
-export function formatDate(value: string | Date): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(value));
+const LONG_DATE_FORMAT = new Intl.DateTimeFormat("pt-BR", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+export function formatCreatedAt(
+  value: string | Date,
+  now: Date = new Date()
+): string {
+  const createdAt = new Date(value);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+  if (createdAt >= todayStart) {
+    const diffMinutes = Math.floor(
+      (now.getTime() - createdAt.getTime()) / 60_000
+    );
+    if (diffMinutes < 1) {
+      return "agora";
+    }
+    if (diffMinutes < 60) {
+      return `há ${diffMinutes} min`;
+    }
+    const hours = Math.floor(diffMinutes / 60);
+    return `há ${hours} ${hours === 1 ? "hora" : "horas"}`;
+  }
+
+  if (createdAt >= yesterdayStart) {
+    return "ontem";
+  }
+
+  return LONG_DATE_FORMAT.format(createdAt);
 }
