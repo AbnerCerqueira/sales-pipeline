@@ -1,4 +1,9 @@
-import type { DealDTO, DealResponsible, DealStatus } from "@sales/shared";
+import type {
+  DealDTO,
+  DealStatus,
+  LeadSummary,
+  SellerSummary,
+} from "@sales/shared";
 import { Entity, type Timestamps } from "../../utils/entity.ts";
 
 export type DealProps = {
@@ -38,15 +43,14 @@ export class Deal extends Entity<DealProps> {
     return this.props.expectedCloseDate;
   }
 
-  toDTO(responsible: DealResponsible): DealDTO {
+  toDTO(responsible: SellerSummary, lead: LeadSummary): DealDTO {
     return {
       createdAt: this.createdAt,
       description: this.description,
       expectedCloseDate: this.expectedCloseDate,
       id: this.id,
-      leadId: this.leadId,
+      lead,
       responsible,
-      responsibleId: this.responsibleId,
       status: this.status,
       title: this.title,
       updatedAt: this.updatedAt,

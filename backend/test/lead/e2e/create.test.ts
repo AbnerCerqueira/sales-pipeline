@@ -18,7 +18,6 @@ describe("Create Lead", () => {
       fullName: string;
       id: string;
       responsible: { email: string; id: string; name: string };
-      responsibleId: string;
       source: string;
     }>();
 
@@ -26,7 +25,6 @@ describe("Create Lead", () => {
     expect(lead.fullName).toBe(payload.fullName);
     expect(lead.companyName).toBe(payload.companyName);
     expect(lead.email).toBe(payload.email);
-    expect(lead.responsibleId).toBe(payload.responsibleId);
     expect(lead.source).toBe(payload.source);
     expect(lead.responsible).toEqual({
       email: expect.any(String),

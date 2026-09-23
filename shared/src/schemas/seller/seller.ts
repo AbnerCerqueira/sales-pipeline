@@ -9,3 +9,11 @@ export const sellerDTOSchema = z.object({
 });
 
 export type SellerDTO = z.infer<typeof sellerDTOSchema>;
+
+export const sellerSummarySchema = sellerDTOSchema.pick({
+  email: true,
+  id: true,
+  name: true,
+});
+
+export type SellerSummary = z.infer<typeof sellerSummarySchema>;

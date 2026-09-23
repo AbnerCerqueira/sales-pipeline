@@ -68,7 +68,7 @@ describe("Search Leads", () => {
     const { items } = response.json<SearchLeadsResponse>();
     expect(items).toHaveLength(1);
     expect(items[0].id).toBe(target.json<LeadDTO>().id);
-    expect(items[0].responsibleId).toBe(seller.id);
+    expect(items[0].responsible.id).toBe(seller.id);
   });
 
   test("defaults to first page with 10 items when no filter is provided", async () => {

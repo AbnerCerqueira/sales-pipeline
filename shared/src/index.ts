@@ -3,21 +3,16 @@ export {
   createDealSchema,
 } from "./schemas/deal/create.ts";
 export { type DealStatus, dealStatusSchema } from "./schemas/deal/deal.ts";
-export {
-  type DealDTO,
-  type DealResponsible,
-  dealDTOSchema,
-  dealResponsibleSchema,
-} from "./schemas/deal/dto.ts";
+export { type DealDTO, dealDTOSchema } from "./schemas/deal/dto.ts";
 export {
   type CreateLeadInput,
   createLeadSchema,
 } from "./schemas/lead/create.ts";
 export {
   type LeadDTO,
-  type LeadResponsible,
+  type LeadSummary,
   leadDTOSchema,
-  leadResponsibleSchema,
+  leadSummarySchema,
 } from "./schemas/lead/dto.ts";
 export {
   type LeadSource,
@@ -44,4 +39,9 @@ export {
   type RegisterInput,
   registerSchema,
 } from "./schemas/seller/register.ts";
-export { type SellerDTO, sellerDTOSchema } from "./schemas/seller/seller.ts";
+export {
+  type SellerDTO,
+  type SellerSummary,
+  sellerDTOSchema,
+  sellerSummarySchema,
+} from "./schemas/seller/seller.ts";

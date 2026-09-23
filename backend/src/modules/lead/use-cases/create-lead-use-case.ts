@@ -28,6 +28,6 @@ export class CreateLeadUseCase {
       "Lead created"
     );
 
-    return lead.toDTO(responsible.toDTO());
+    return lead.toDTO(responsible.toSummary());
   }
 }

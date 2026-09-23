@@ -1,4 +1,4 @@
-import type { SellerDTO } from "@sales/shared";
+import type { SellerDTO, SellerSummary } from "@sales/shared";
 import { Entity, type Timestamps } from "../../utils/entity.ts";
 
 export type SellerProps = {
@@ -31,6 +31,14 @@ export class Seller extends Entity<SellerProps> {
       id: this.id,
       name: this.name,
       updatedAt: this.updatedAt,
+    };
+  }
+
+  toSummary(): SellerSummary {
+    return {
+      email: this.email,
+      id: this.id,
+      name: this.name,
     };
   }
 

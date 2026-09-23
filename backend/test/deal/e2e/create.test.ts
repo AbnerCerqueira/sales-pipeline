@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { dealDTOSchema } from "@sales/shared";
+import { dealDTOSchema, type LeadDTO } from "@sales/shared";
 import { app } from "../../../src/app.ts";
 import { HttpStatus } from "../../../src/utils/http-status.ts";
 import { createLeadViaHttp } from "../../lead/e2e/helpers.ts";
@@ -10,7 +10,7 @@ import { DealRoutes } from "./routes.ts";
 describe("Create Deal", () => {
   test("creates deal with default responsible from lead", async () => {
     const leadResponse = await createLeadViaHttp();
-    const lead = leadResponse.json<{ id: string; responsibleId: string }>();
+    const lead = leadResponse.json<LeadDTO>();
 
     const response = await createDealViaHttp({
       leadId: lead.id,
@@ -23,9 +23,14 @@ describe("Create Deal", () => {
     const deal = dealDTOSchema.parse(response.json());
 
     expect(deal.id).toBeDefined();
-    expect(deal.leadId).toBe(lead.id);
-    expect(deal.responsibleId).toBe(lead.responsibleId);
-    expect(deal.responsible.id).toBe(lead.responsibleId);
+    expect(deal.lead).toEqual({
+      companyName: lead.companyName,
+      email: lead.email,
+      fullName: lead.fullName,
+      id: lead.id,
+      whatsapp: lead.whatsapp,
+    });
+    expect(deal.responsible.id).toBe(lead.responsible.id);
     expect(deal.title).toBe("Renovação anual");
     expect(deal.value).toBe(1234.56);
     expect(deal.status).toBe("open");
@@ -46,7 +51,6 @@ describe("Create Deal", () => {
 
     const deal = dealDTOSchema.parse(response.json());
 
-    expect(deal.responsibleId).toBe(otherSeller.id);
     expect(deal.responsible.id).toBe(otherSeller.id);
   });
 

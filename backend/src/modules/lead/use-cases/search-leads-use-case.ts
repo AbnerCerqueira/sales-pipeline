@@ -20,7 +20,7 @@ export class SearchLeadsUseCase {
 
     return {
       items: items.map(({ lead, responsible }) =>
-        lead.toDTO(responsible.toDTO())
+        lead.toDTO(responsible.toSummary())
       ),
       page,
       pageSize,

@@ -36,6 +36,6 @@ export class CreateDealUseCase {
       "Deal created"
     );
 
-    return deal.toDTO(responsible.toDTO());
+    return deal.toDTO(responsible.toSummary(), lead.toSummary());
   }
 }
