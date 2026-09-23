@@ -1,4 +1,24 @@
 {
   "root": false,
-  "extends": "//"
+  "extends": "//",
+  "overrides": [
+    {
+      "includes": ["src/components/ui/**", "src/lib/utils.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noNamespaceImport": { "level": "off" },
+            "noBarrelFile": { "level": "off" },
+            "noJsxPropsBind": { "level": "off" }
+          },
+          "suspicious": {
+            "noLeakedRender": { "level": "off" }
+          },
+          "style": {
+            "useConsistentTypeDefinitions": { "level": "off" }
+          }
+        }
+      }
+    }
+  ]
 }

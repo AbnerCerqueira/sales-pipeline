@@ -10,15 +10,16 @@ import {
 import type { ChangeEvent } from "react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import AppShell from "../../components/app-shell.tsx";
-import Button from "../../components/button.tsx";
 import CreateLeadModal from "../../components/create-lead-modal.tsx";
 import Highlight from "../../components/highlight.tsx";
-import Input from "../../components/input.tsx";
-import Select from "../../components/select.tsx";
+import { SellerCombobox } from "../../components/seller-combobox.tsx";
+import { Button } from "../../components/ui/button.tsx";
+import { Input } from "../../components/ui/input.tsx";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 import { useLeadsQuery } from "../../hooks/use-leads.ts";
 import { useSellersQuery } from "../../hooks/use-sellers.ts";
 import { formatCreatedAt, formatLeadSource } from "../../lib/lead-options.ts";
+import { initialsOf } from "../../lib/utils.ts";
 
 const PAGE_SIZE = 12;
 
@@ -31,16 +32,6 @@ const TABLE_HEADERS = [
   "Origem",
   "Cadastrado em",
 ];
-
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function ListLeadsPage() {
   const [search, setSearch] = useState("");
@@ -75,13 +66,10 @@ function ListLeadsPage() {
     []
   );
 
-  const handleResponsibleChange = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      setResponsibleId(event.target.value);
-      setPage(1);
-    },
-    []
-  );
+  const handleResponsibleChange = useCallback((value: string) => {
+    setResponsibleId(value);
+    setPage(1);
+  }, []);
 
   const clearSearch = useCallback(() => {
     setSearch("");
@@ -190,7 +178,7 @@ function ListLeadsPage() {
             </h1>
           </div>
           <Button
-            className="self-start px-4 shadow-lg shadow-orange-950/40 sm:self-auto"
+            className="self-start shadow-lg shadow-orange-950/40 sm:self-auto"
             onClick={openModal}
             type="button"
           >
@@ -226,19 +214,17 @@ function ListLeadsPage() {
               </button>
             )}
           </div>
-          <Select
-            aria-label="Filtrar por vendedor responsável"
+          <SellerCombobox
             className="w-52"
-            onChange={handleResponsibleChange}
+            emptyLabel="Vendedor: Todos"
+            isPending={sellersQuery.isPending}
+            onValueChange={handleResponsibleChange}
+            placeholder="Buscar vendedor..."
+            selectedPrefix="Vendedor: "
+            sellers={sellersQuery.data}
+            showAllLabel="Todos"
             value={responsibleId}
-          >
-            <option value="">Vendedor: Todos</option>
-            {sellersQuery.data?.map((seller) => (
-              <option key={seller.id} value={seller.id}>
-                Vendedor: {seller.name}
-              </option>
-            ))}
-          </Select>
+          />
           {hasSellerFilter ? (
             <button
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 font-medium text-orange-300 text-xs transition-colors hover:bg-orange-500/15"
@@ -291,9 +277,9 @@ function ListLeadsPage() {
               <div className="flex gap-2">
                 <Button
                   aria-label="Página anterior"
-                  className="px-2.5"
                   disabled={page <= 1}
                   onClick={goToPreviousPage}
+                  size="icon-sm"
                   type="button"
                   variant="secondary"
                 >
@@ -301,9 +287,9 @@ function ListLeadsPage() {
                 </Button>
                 <Button
                   aria-label="Próxima página"
-                  className="px-2.5"
                   disabled={page >= totalPages}
                   onClick={goToNextPage}
+                  size="icon-sm"
                   type="button"
                   variant="secondary"
                 >

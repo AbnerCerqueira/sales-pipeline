@@ -3,7 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./app.tsx";
-import { ToastProvider } from "./components/toast.tsx";
+import { Toaster } from "./components/ui/sonner.tsx";
 import { AuthProvider } from "./context/auth.tsx";
 
 const queryClient = new QueryClient({
@@ -22,11 +22,10 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ToastProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+      <Toaster position="bottom-right" richColors />
     </QueryClientProvider>
   </StrictMode>
 );

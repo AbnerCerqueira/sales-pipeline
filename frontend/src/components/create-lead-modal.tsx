@@ -2,19 +2,39 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createLeadSchema, leadSourceSchema } from "@sales/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useErrorToast } from "../hooks/use-error-toast.ts";
 import { useCreateLeadMutation } from "../hooks/use-leads.ts";
 import { useSellersQuery } from "../hooks/use-sellers.ts";
 import { LEAD_SOURCE_OPTIONS } from "../lib/lead-options.ts";
 import { formatWhatsApp } from "../lib/masks.ts";
-import Button from "./button.tsx";
-import FormField from "./form-field.tsx";
-import Modal from "./modal.tsx";
-import Select from "./select.tsx";
-import Textarea from "./textarea.tsx";
+import { SellerCombobox } from "./seller-combobox.tsx";
 import { useToast } from "./toast.tsx";
+import { Button } from "./ui/button.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog.tsx";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form.tsx";
+import { Input } from "./ui/input.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select.tsx";
+import { Textarea } from "./ui/textarea.tsx";
 
 const createLeadFormSchema = createLeadSchema.extend({
   responsibleId: z.uuid("Selecione um vendedor responsável"),
@@ -35,25 +55,19 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
   const createLeadMutation = useCreateLeadMutation();
   const sellersQuery = useSellersQuery();
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateLeadFormInput>({
+  const form = useForm<CreateLeadFormInput>({
     defaultValues: {
       companyName: "",
       description: "",
       email: "",
       fullName: "",
       responsibleId: "",
+      source: undefined,
       whatsapp: "",
     },
     mode: "onChange",
     resolver: zodResolver(createLeadFormSchema),
   });
-
-  useErrorToast(sellersQuery);
 
   const handleClose = useCallback(() => {
     if (!createLeadMutation.isPending) {
@@ -69,215 +83,218 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
       onSuccess: () => {
         toast("Lead salvo com sucesso", "success");
         queryClient.invalidateQueries({ queryKey: ["leads"] });
-        reset();
+        form.reset();
         onClose();
       },
     });
   }
 
   return (
-    <Modal
-      onClose={handleClose}
-      subtitle="Preencha os dados do potencial cliente"
-      title="Novo Lead"
-    >
-      <form noValidate onSubmit={handleSubmit(onSubmit)}>
-        <h2 className="font-semibold text-[11px] text-zinc-500 uppercase tracking-widest">
-          Informações do contato
-        </h2>
+    // biome-ignore lint/performance/noJsxPropsBind: needs closure over handleClose to block close while pending
+    <Dialog onOpenChange={(open) => !open && handleClose()} open>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Novo Lead</DialogTitle>
+          <DialogDescription>
+            Preencha os dados do potencial cliente
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="mt-6 grid grid-cols-1 gap-x-6 md:grid-cols-2">
-          <Controller
-            control={control}
-            name="fullName"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
+        <Form {...form}>
+          <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
+            <h2 className="font-semibold text-[11px] text-zinc-500 uppercase tracking-widest">
+              Informações do contato
+            </h2>
+
+            <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
               <FormField
-                error={errors.fullName?.message}
-                id="fullName"
-                label="Nome Completo"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="Ex: Roberto Carlos da Silva"
-                ref={field.ref}
-                required
-                type="text"
-                value={field.value}
+                control={form.control}
+                name="fullName"
+                // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Nome Completo
+                      <span className="ml-0.5 text-orange-400">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Roberto Carlos da Silva"
+                        required
+                        type="text"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
-          />
 
-          <Controller
-            control={control}
-            name="companyName"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
               <FormField
-                error={errors.companyName?.message}
-                id="companyName"
-                label="Nome da Empresa"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="Ex: Academia FitLife Centro"
-                ref={field.ref}
-                required
-                type="text"
-                value={field.value}
+                control={form.control}
+                name="companyName"
+                // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Nome da Empresa
+                      <span className="ml-0.5 text-orange-400">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Academia FitLife Centro"
+                        required
+                        type="text"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
-          />
 
-          <Controller
-            control={control}
-            name="email"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
               <FormField
-                error={errors.email?.message}
-                id="email"
-                label="E-mail"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="contato@empresa.com.br"
-                ref={field.ref}
-                required
-                type="email"
-                value={field.value}
+                control={form.control}
+                name="email"
+                // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      E-mail
+                      <span className="ml-0.5 text-orange-400">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="contato@empresa.com.br"
+                        required
+                        type="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
-          />
 
-          <Controller
-            control={control}
-            name="whatsapp"
-            // biome-ignore lint/performance/noJsxPropsBind: mask needs the input event to format the value before updating form state
-            render={({ field }) => (
               <FormField
-                error={errors.whatsapp?.message}
-                id="whatsapp"
-                inputMode="numeric"
-                label="WhatsApp"
-                onBlur={field.onBlur}
-                // biome-ignore lint/performance/noJsxPropsBind: mask needs the input event to format the value before updating form state
-                onChange={(event) =>
-                  field.onChange(formatWhatsApp(event.target.value))
-                }
-                placeholder="(11) 99999-8888"
-                ref={field.ref}
-                required
-                type="tel"
-                value={field.value}
+                control={form.control}
+                name="whatsapp"
+                // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      WhatsApp
+                      <span className="ml-0.5 text-orange-400">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        inputMode="numeric"
+                        placeholder="(11) 99999-8888"
+                        required
+                        type="tel"
+                        {...field}
+                        // biome-ignore lint/performance/noJsxPropsBind: mask needs the input event to format the value before updating form state
+                        onChange={(event) =>
+                          field.onChange(formatWhatsApp(event.target.value))
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
-          />
 
-          <Controller
-            control={control}
-            name="source"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
               <FormField
-                error={errors.source?.message}
-                id="source"
-                label="Origem do Lead"
-                required
-              >
-                <Select
-                  error={errors.source?.message}
-                  id="source"
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ""}
-                >
-                  <option value="">Selecione a origem</option>
-                  {LEAD_SOURCE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            )}
-          />
+                control={form.control}
+                name="source"
+                // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Origem do Lead
+                      <span className="ml-0.5 text-orange-400">*</span>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione a origem" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {LEAD_SOURCE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <Controller
-            control={control}
-            name="responsibleId"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
               <FormField
-                error={errors.responsibleId?.message}
-                id="responsibleId"
-                label="Vendedor Responsável"
-                required
-              >
-                <Select
-                  error={errors.responsibleId?.message}
-                  id="responsibleId"
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ""}
-                >
-                  <option value="">Atribuir a um vendedor</option>
-                  {sellersQuery.isPending ? (
-                    <option disabled value="">
-                      Carregando vendedores...
-                    </option>
-                  ) : null}
-                  {sellersQuery.data?.map((seller) => (
-                    <option key={seller.id} value={seller.id}>
-                      {seller.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            )}
-          />
+                control={form.control}
+                name="responsibleId"
+                // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Vendedor Responsável
+                      <span className="ml-0.5 text-orange-400">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <SellerCombobox
+                        emptyLabel="Atribuir a um vendedor"
+                        isPending={sellersQuery.isPending}
+                        onValueChange={field.onChange}
+                        placeholder="Buscar vendedor..."
+                        sellers={sellersQuery.data}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="md:col-span-2">
-            <Controller
-              control={control}
-              name="description"
-              // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-              render={({ field }) => (
+              <div className="md:col-span-2">
                 <FormField
-                  error={errors.description?.message}
-                  id="description"
-                  label="Observações"
-                >
-                  <Textarea
-                    error={errors.description?.message}
-                    id="description"
-                    onBlur={field.onBlur}
-                    onChange={field.onChange}
-                    placeholder="Ex: Cliente demonstrou interesse inicial em esteiras profissionais..."
-                    value={field.value ?? ""}
-                  />
-                </FormField>
-              )}
-            />
-          </div>
-        </div>
+                  control={form.control}
+                  name="description"
+                  // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Ex: Cliente demonstrou interesse inicial em esteiras profissionais..."
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
-        <div className="mt-2 flex justify-end gap-3 border-zinc-800/60 border-t pt-5">
-          <Button
-            className="px-4"
-            onClick={handleClose}
-            type="button"
-            variant="secondary"
-          >
-            Cancelar
-          </Button>
-          <Button
-            className="px-5"
-            loading={createLeadMutation.isPending}
-            type="submit"
-          >
-            Salvar Lead
-          </Button>
-        </div>
-      </form>
-    </Modal>
+            <div className="mt-2 flex justify-end gap-3 border-zinc-800/60 border-t pt-5">
+              <Button onClick={handleClose} type="button" variant="secondary">
+                Cancelar
+              </Button>
+              <Button loading={createLeadMutation.isPending} type="submit">
+                Salvar Lead
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

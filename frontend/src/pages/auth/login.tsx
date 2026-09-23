@@ -1,12 +1,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type LoginInput, loginSchema } from "@sales/shared";
 import { useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth-layout.tsx";
 import BrandHeader from "../../components/brand-header.tsx";
-import Button from "../../components/button.tsx";
-import FormField from "../../components/form-field.tsx";
+import { Button } from "../../components/ui/button.tsx";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../components/ui/form.tsx";
+import { Input } from "../../components/ui/input.tsx";
 import { useAuth } from "../../context/auth.tsx";
 import { useLoginMutation } from "../../hooks/use-auth.ts";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
@@ -19,11 +27,11 @@ function LoginPage() {
 
   useErrorToast(loginMutation);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginInput>({
+  const form = useForm<LoginInput>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
     mode: "onChange",
     resolver: zodResolver(loginSchema),
   });
@@ -43,55 +51,67 @@ function LoginPage() {
       <div className="flex flex-col items-center gap-8">
         <BrandHeader subtitle="Entre na sua conta para continuar" />
 
-        <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <Controller
-            control={control}
-            name="email"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
-              <FormField
-                error={errors.email?.message}
-                id="email"
-                label="E-mail profissional"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="voce@empresa.com.br"
-                ref={field.ref}
-                required
-                type="email"
-                value={field.value}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
-              <FormField
-                error={errors.password?.message}
-                id="password"
-                label="Senha"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="Sua senha"
-                ref={field.ref}
-                required
-                type="password"
-                value={field.value}
-              />
-            )}
-          />
-
-          <Button
-            className="w-full px-4"
-            loading={loginMutation.isPending}
-            type="submit"
+        <Form {...form}>
+          <form
+            className="w-full space-y-6"
+            noValidate
+            onSubmit={form.handleSubmit(onSubmit)}
           >
-            Entrar no CRM
-          </Button>
-        </form>
+            <FormField
+              control={form.control}
+              name="email"
+              // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    E-mail profissional
+                    <span className="ml-0.5 text-orange-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="voce@empresa.com.br"
+                      required
+                      type="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Senha
+                    <span className="ml-0.5 text-orange-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Sua senha"
+                      required
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              className="w-full"
+              loading={loginMutation.isPending}
+              type="submit"
+            >
+              Entrar no CRM
+            </Button>
+          </form>
+        </Form>
 
         <p className="text-center text-sm text-zinc-400">
           Não tem uma conta?{" "}

@@ -10,6 +10,8 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/auth.tsx";
 import { useMeQuery } from "../hooks/use-auth.ts";
 import { useErrorToast } from "../hooks/use-error-toast.ts";
+import { initialsOf } from "../lib/utils.ts";
+import { Button } from "./ui/button.tsx";
 
 const NAV_ITEMS = [
   { icon: LayoutGrid, label: "Dashboard", to: "/dashboard" },
@@ -36,13 +38,7 @@ function AppShell({ children }: AppShellProps) {
   const seller = meQuery.data;
   useErrorToast(meQuery);
   const displayName = seller?.name ?? "…";
-  const initials = displayName
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = initialsOf(displayName);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -76,15 +72,16 @@ function AppShell({ children }: AppShellProps) {
               {seller?.email ?? " "}
             </p>
           </div>
-          <button
+          <Button
             aria-label="Sair"
-            className="shrink-0 rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
             onClick={logout}
+            size="icon-sm"
             title="Sair"
             type="button"
+            variant="ghost"
           >
             <LogOut size={16} strokeWidth={2.2} />
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -94,15 +91,16 @@ function AppShell({ children }: AppShellProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 font-semibold text-white text-xs shadow-md shadow-orange-950/40">
             {initials}
           </div>
-          <button
+          <Button
             aria-label="Sair"
-            className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
             onClick={logout}
+            size="icon-sm"
             title="Sair"
             type="button"
+            variant="ghost"
           >
             <LogOut size={16} strokeWidth={2.2} />
-          </button>
+          </Button>
         </div>
       </header>
 

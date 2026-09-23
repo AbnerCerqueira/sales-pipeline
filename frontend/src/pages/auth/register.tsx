@@ -1,13 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "@sales/shared";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import AuthLayout from "../../components/auth-layout.tsx";
 import BrandHeader from "../../components/brand-header.tsx";
-import Button from "../../components/button.tsx";
-import FormField from "../../components/form-field.tsx";
 import { useToast } from "../../components/toast.tsx";
+import { Button } from "../../components/ui/button.tsx";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../components/ui/form.tsx";
+import { Input } from "../../components/ui/input.tsx";
 import { useRegisterMutation } from "../../hooks/use-auth.ts";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 
@@ -29,11 +37,13 @@ function RegisterPage() {
 
   useErrorToast(registerMutation);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormInput>({
+  const form = useForm<RegisterFormInput>({
+    defaultValues: {
+      confirmPassword: "",
+      email: "",
+      name: "",
+      password: "",
+    },
     mode: "onChange",
     resolver: zodResolver(registerFormSchema),
   });
@@ -53,96 +63,114 @@ function RegisterPage() {
       <div className="flex flex-col items-center gap-8">
         <BrandHeader subtitle="Crie sua conta para acessar o sistema" />
 
-        <form className="w-full space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <Controller
-            control={control}
-            name="name"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
-              <FormField
-                error={errors.name?.message}
-                id="name"
-                label="Nome completo"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="Seu nome"
-                ref={field.ref}
-                required
-                type="text"
-                value={field.value}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="email"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
-              <FormField
-                error={errors.email?.message}
-                id="email"
-                label="E-mail profissional"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="voce@empresa.com.br"
-                ref={field.ref}
-                required
-                type="email"
-                value={field.value}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
-              <FormField
-                error={errors.password?.message}
-                id="password"
-                label="Senha"
-                minLength={6}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="Mínimo 6 caracteres"
-                ref={field.ref}
-                required
-                type="password"
-                value={field.value}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="confirmPassword"
-            // biome-ignore lint/performance/noJsxPropsBind: Controller render is the standard RHF pattern
-            render={({ field }) => (
-              <FormField
-                error={errors.confirmPassword?.message}
-                id="confirmPassword"
-                label="Confirmar senha"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder="Repita a senha"
-                ref={field.ref}
-                required
-                type="password"
-                value={field.value}
-              />
-            )}
-          />
-
-          <Button
-            className="w-full px-4"
-            loading={registerMutation.isPending}
-            type="submit"
+        <Form {...form}>
+          <form
+            className="w-full space-y-6"
+            noValidate
+            onSubmit={form.handleSubmit(onSubmit)}
           >
-            Criar conta
-          </Button>
-        </form>
+            <FormField
+              control={form.control}
+              name="name"
+              // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Nome completo
+                    <span className="ml-0.5 text-orange-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Seu nome"
+                      required
+                      type="text"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    E-mail profissional
+                    <span className="ml-0.5 text-orange-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="voce@empresa.com.br"
+                      required
+                      type="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Senha
+                    <span className="ml-0.5 text-orange-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      minLength={6}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Confirmar senha
+                    <span className="ml-0.5 text-orange-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Repita a senha"
+                      required
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              className="w-full"
+              loading={registerMutation.isPending}
+              type="submit"
+            >
+              Criar conta
+            </Button>
+          </form>
+        </Form>
 
         <p className="text-center text-sm text-zinc-400">
           Já tem uma conta?{" "}

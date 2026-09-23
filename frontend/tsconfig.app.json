@@ -18,7 +18,8 @@
 
     /* Paths */
     "paths": {
-      "@sales/shared": ["../shared/src"]
+      "@sales/shared": ["../shared/src"],
+      "@/*": ["./src/*"]
     },
 
     /* Linting */
