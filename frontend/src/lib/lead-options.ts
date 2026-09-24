@@ -15,11 +15,34 @@ export function formatLeadSource(source: LeadSource): string {
   );
 }
 
+const LEAD_SOURCE_BADGE_CLASSES: Record<LeadSource, string> = {
+  inbound: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
+  other: "border-zinc-700/60 bg-zinc-800/60 text-zinc-300",
+  outbound: "border-amber-500/25 bg-amber-500/10 text-amber-300",
+  referral: "border-sky-500/25 bg-sky-500/10 text-sky-300",
+};
+
+export function leadSourceBadgeClass(source: LeadSource): string {
+  return LEAD_SOURCE_BADGE_CLASSES[source] ?? LEAD_SOURCE_BADGE_CLASSES.other;
+}
+
 const LONG_DATE_FORMAT = new Intl.DateTimeFormat("pt-BR", {
   day: "numeric",
   month: "long",
   year: "numeric",
 });
+
+const FULL_DATE_FORMAT = new Intl.DateTimeFormat("pt-BR", {
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  month: "long",
+  year: "numeric",
+});
+
+export function formatFullDate(value: string | Date): string {
+  return FULL_DATE_FORMAT.format(new Date(value));
+}
 
 export function formatCreatedAt(
   value: string | Date,

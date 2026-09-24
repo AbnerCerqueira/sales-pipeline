@@ -24,7 +24,7 @@ export class CreateDealUseCase {
       expectedCloseDate: input.expectedCloseDate ?? null,
       leadId: input.leadId,
       responsibleId,
-      status: "open",
+      status: input.status,
       title: input.title,
       value: input.value ?? null,
     });

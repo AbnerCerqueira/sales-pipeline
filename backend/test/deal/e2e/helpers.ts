@@ -27,6 +27,7 @@ export async function createDealPayload(
   return {
     description: null,
     expectedCloseDate: null,
+    status: "open",
     title: `Deal ${suffix}`,
     value: 1500.5,
     ...rest,

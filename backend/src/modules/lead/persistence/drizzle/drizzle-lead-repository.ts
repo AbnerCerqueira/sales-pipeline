@@ -3,7 +3,7 @@ import {
   type PaginatedResult,
   type SearchLeadsQuery,
 } from "@sales/shared";
-import { and, desc, eq, ilike, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { sellerToDomain } from "../../../seller/persistence/drizzle/drizzle-seller-repository.ts";
 import { sellersTable } from "../../../seller/persistence/drizzle/seller-table.ts";
@@ -62,7 +62,13 @@ export class DrizzleLeadRepository implements LeadRepository {
     const conditions: SQL[] = [];
 
     if (filters.name) {
-      conditions.push(ilike(leadsTable.fullName, `%${filters.name}%`));
+      const nameFilter = or(
+        ilike(leadsTable.fullName, `%${filters.name}%`),
+        ilike(leadsTable.companyName, `%${filters.name}%`)
+      );
+      if (nameFilter) {
+        conditions.push(nameFilter);
+      }
     }
 
     if (filters.responsibleId) {

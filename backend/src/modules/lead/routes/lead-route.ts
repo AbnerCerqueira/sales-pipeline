@@ -36,7 +36,8 @@ export const leadRoutes: FastifyPluginCallbackZod = (app) => {
     {
       preHandler: [app.authenticate],
       schema: {
-        description: "Busca leads por parte do nome e/ou seller responsável",
+        description:
+          "Busca leads por parte do nome ou empresa e/ou seller responsável",
         querystring: searchLeadsQuerySchema,
         response: {
           [HttpStatus.OK]: searchLeadsResponseSchema,

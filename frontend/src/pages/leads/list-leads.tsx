@@ -2,15 +2,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Plus,
+  MessageCircle,
   Search,
+  UserPlus,
   UserSearch,
   X,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import AppShell from "../../components/app-shell.tsx";
-import CreateLeadModal from "../../components/create-lead-modal.tsx";
+import AppShell, { useAppShell } from "../../components/app-shell.tsx";
 import Highlight from "../../components/highlight.tsx";
 import { SellerCombobox } from "../../components/seller-combobox.tsx";
 import { Button } from "../../components/ui/button.tsx";
@@ -18,7 +18,13 @@ import { Input } from "../../components/ui/input.tsx";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 import { useLeadsQuery } from "../../hooks/use-leads.ts";
 import { useSellersQuery } from "../../hooks/use-sellers.ts";
-import { formatCreatedAt, formatLeadSource } from "../../lib/lead-options.ts";
+import {
+  formatCreatedAt,
+  formatFullDate,
+  formatLeadSource,
+  leadSourceBadgeClass,
+} from "../../lib/lead-options.ts";
+import { whatsappHref } from "../../lib/masks.ts";
 import { initialsOf } from "../../lib/utils.ts";
 
 const PAGE_SIZE = 12;
@@ -34,11 +40,19 @@ const TABLE_HEADERS = [
 ];
 
 function ListLeadsPage() {
+  return (
+    <AppShell>
+      <ListLeadsContent />
+    </AppShell>
+  );
+}
+
+function ListLeadsContent() {
+  const { openLeadModal } = useAppShell();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [responsibleId, setResponsibleId] = useState("");
   const [page, setPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sellersQuery = useSellersQuery();
   const leadsQuery = useLeadsQuery({
@@ -77,7 +91,9 @@ function ListLeadsPage() {
     setPage(1);
   }, []);
 
-  const clearSellerFilter = useCallback(() => {
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
     setResponsibleId("");
     setPage(1);
   }, []);
@@ -90,19 +106,11 @@ function ListLeadsPage() {
     setPage((current) => current + 1);
   }, []);
 
-  const openModal = useCallback(() => {
-    setIsModalOpen(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setIsModalOpen(false);
-  }, []);
-
   const leads = leadsQuery.data?.items ?? [];
   const total = leadsQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isRefreshing = leadsQuery.isFetching && !leadsQuery.isPending;
-  const hasSellerFilter = responsibleId !== "";
+  const hasActiveFilters = responsibleId !== "" || search.trim() !== "";
 
   let tableBody: ReactNode;
   if (leadsQuery.isPending) {
@@ -125,126 +133,147 @@ function ListLeadsPage() {
           <p className="mt-1 text-sm text-zinc-500">
             Ajuste a busca ou cadastre um novo lead para começar.
           </p>
+          <Button
+            className="mt-4"
+            onClick={openLeadModal}
+            size="sm"
+            type="button"
+          >
+            <UserPlus size={16} strokeWidth={2.5} />
+            Cadastrar lead
+          </Button>
         </td>
       </tr>
     );
   } else {
-    tableBody = leads.map((lead) => (
-      <tr className="transition-colors hover:bg-zinc-800/30" key={lead.id}>
-        <td className="px-5 py-3.5">
-          <span className="flex items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-500/20 bg-orange-500/10 font-semibold text-[11px] text-orange-300">
-              {initialsOf(lead.fullName)}
+    tableBody = leads.map((lead) => {
+      const whatsappUrl = whatsappHref(lead.whatsapp);
+      return (
+        <tr className="transition-colors hover:bg-zinc-800/30" key={lead.id}>
+          <td className="px-5 py-3.5">
+            <span className="flex items-center gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-500/20 bg-orange-500/10 font-semibold text-[11px] text-orange-300">
+                {initialsOf(lead.fullName)}
+              </span>
+              <span className="whitespace-nowrap font-medium text-zinc-100">
+                <Highlight query={search} text={lead.fullName} />
+              </span>
             </span>
-            <span className="whitespace-nowrap font-medium text-zinc-100">
-              <Highlight query={search} text={lead.fullName} />
+          </td>
+          <td className="whitespace-nowrap px-5 py-3.5 text-zinc-300">
+            {lead.companyName}
+          </td>
+          <td className="whitespace-nowrap px-5 py-3.5 text-zinc-400">
+            {lead.email}
+          </td>
+          <td className="whitespace-nowrap px-5 py-3.5">
+            {whatsappUrl ? (
+              <a
+                className="inline-flex items-center gap-1.5 text-zinc-400 transition-colors hover:text-emerald-300 hover:underline"
+                href={whatsappUrl}
+                rel="noreferrer"
+                target="_blank"
+                title="Conversar no WhatsApp"
+              >
+                <MessageCircle size={13} />
+                {lead.whatsapp}
+              </a>
+            ) : (
+              <span className="text-zinc-400">{lead.whatsapp}</span>
+            )}
+          </td>
+          <td className="whitespace-nowrap px-5 py-3.5 text-zinc-300">
+            {lead.responsible.name}
+          </td>
+          <td className="px-5 py-3.5">
+            <span
+              className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-0.5 font-medium text-xs ${leadSourceBadgeClass(lead.source)}`}
+            >
+              {formatLeadSource(lead.source)}
             </span>
-          </span>
-        </td>
-        <td className="whitespace-nowrap px-5 py-3.5 text-zinc-300">
-          {lead.companyName}
-        </td>
-        <td className="whitespace-nowrap px-5 py-3.5 text-zinc-400">
-          {lead.email}
-        </td>
-        <td className="whitespace-nowrap px-5 py-3.5 text-zinc-400">
-          {lead.whatsapp}
-        </td>
-        <td className="whitespace-nowrap px-5 py-3.5 text-zinc-300">
-          {lead.responsible.name}
-        </td>
-        <td className="px-5 py-3.5">
-          <span className="inline-flex whitespace-nowrap rounded-full border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-0.5 font-medium text-xs text-zinc-300">
-            {formatLeadSource(lead.source)}
-          </span>
-        </td>
-        <td className="whitespace-nowrap px-5 py-3.5 text-zinc-500">
-          {formatCreatedAt(lead.createdAt)}
-        </td>
-      </tr>
-    ));
+          </td>
+          <td className="whitespace-nowrap px-5 py-3.5 text-zinc-500">
+            <span title={formatFullDate(lead.createdAt)}>
+              {formatCreatedAt(lead.createdAt)}
+            </span>
+          </td>
+        </tr>
+      );
+    });
   }
 
   return (
-    <AppShell>
-      <header className="border-zinc-800/60 border-b px-6 py-6 md:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+    <>
+      <header className="border-zinc-800/60 border-b px-6 py-5 md:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <div className="min-w-52">
             <p className="font-semibold text-[11px] text-orange-400/80 uppercase tracking-widest">
               CRM — Vendas
             </p>
             <h1 className="mt-1 font-bold text-2xl text-white tracking-tight">
               Leads
             </h1>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-zinc-500">
+              {leadsQuery.isFetching ? (
+                <Loader2 className="animate-spin text-orange-400" size={12} />
+              ) : (
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              )}
+              {total} {total === 1 ? "lead encontrado" : "leads encontrados"}
+            </p>
           </div>
-          <Button
-            className="self-start shadow-lg shadow-orange-950/40 sm:self-auto"
-            onClick={openModal}
-            type="button"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            Novo Lead
-          </Button>
+
+          <div className="flex flex-1 flex-wrap items-center justify-end gap-2.5">
+            <div className="relative w-full sm:w-64 lg:w-72">
+              <Search
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-600"
+                size={16}
+              />
+              <Input
+                aria-label="Buscar lead por nome ou empresa"
+                className="pr-9 pl-9 [&::-webkit-search-cancel-button]:appearance-none"
+                onChange={handleSearchChange}
+                placeholder="Buscar por nome ou empresa..."
+                type="search"
+                value={search}
+              />
+              {search === "" ? null : (
+                <button
+                  aria-label="Limpar busca"
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-1 text-zinc-500 transition-colors hover:text-zinc-200"
+                  onClick={clearSearch}
+                  type="button"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <SellerCombobox
+              className="w-full sm:w-52"
+              emptyLabel="Vendedor: Todos"
+              isPending={sellersQuery.isPending}
+              onValueChange={handleResponsibleChange}
+              placeholder="Buscar vendedor..."
+              selectedPrefix="Vendedor: "
+              sellers={sellersQuery.data}
+              showAllLabel="Todos"
+              value={responsibleId}
+            />
+            {hasActiveFilters ? (
+              <button
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 font-medium text-orange-300 text-xs transition-colors hover:bg-orange-500/15"
+                onClick={clearFilters}
+                type="button"
+              >
+                <X size={12} />
+                Limpar filtros
+              </button>
+            ) : null}
+          </div>
         </div>
       </header>
 
       <main className="px-4 py-6 md:px-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-full sm:w-72">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-600"
-              size={16}
-            />
-            <Input
-              aria-label="Buscar lead por nome"
-              className="pr-9 pl-9 [&::-webkit-search-cancel-button]:appearance-none"
-              onChange={handleSearchChange}
-              placeholder="Buscar nome..."
-              type="search"
-              value={search}
-            />
-            {search === "" ? null : (
-              <button
-                aria-label="Limpar busca"
-                className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-1 text-zinc-500 transition-colors hover:text-zinc-200"
-                onClick={clearSearch}
-                type="button"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-          <SellerCombobox
-            className="w-52"
-            emptyLabel="Vendedor: Todos"
-            isPending={sellersQuery.isPending}
-            onValueChange={handleResponsibleChange}
-            placeholder="Buscar vendedor..."
-            selectedPrefix="Vendedor: "
-            sellers={sellersQuery.data}
-            showAllLabel="Todos"
-            value={responsibleId}
-          />
-          {hasSellerFilter ? (
-            <button
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 font-medium text-orange-300 text-xs transition-colors hover:bg-orange-500/15"
-              onClick={clearSellerFilter}
-              type="button"
-            >
-              <X size={12} />
-              Limpar filtros
-            </button>
-          ) : null}
-          <span className="ml-auto inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/70 px-3 py-1 font-medium text-xs text-zinc-400">
-            {leadsQuery.isFetching ? (
-              <Loader2 className="animate-spin text-orange-400" size={12} />
-            ) : (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            )}
-            {total} {total === 1 ? "lead encontrado" : "leads encontrados"}
-          </span>
-        </div>
-
         <div
           className={`mt-4 overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50 shadow-black/20 shadow-xl ring-1 ring-white/5 transition-opacity ${
             isRefreshing ? "opacity-60" : "opacity-100"
@@ -300,9 +329,7 @@ function ListLeadsPage() {
           ) : null}
         </div>
       </main>
-
-      {isModalOpen ? <CreateLeadModal onClose={closeModal} /> : null}
-    </AppShell>
+    </>
   );
 }
 

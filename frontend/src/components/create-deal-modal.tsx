@@ -1,13 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createLeadSchema, leadSourceSchema } from "@sales/shared";
+import {
+  type CreateDealInput,
+  createDealSchema,
+  dealStatusSchema,
+  MAX_DEAL_VALUE,
+} from "@sales/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useCreateLeadMutation } from "../hooks/use-leads.ts";
+import { useCreateDealMutation } from "../hooks/use-deals.ts";
 import { useSellersQuery } from "../hooks/use-sellers.ts";
-import { LEAD_SOURCE_OPTIONS } from "../lib/lead-options.ts";
-import { formatWhatsApp } from "../lib/masks.ts";
+import { DEAL_STATUS_OPTIONS } from "../lib/deal-options.ts";
+import { nextCurrencyValue, parseCurrency } from "../lib/masks.ts";
+import { LeadCombobox } from "./lead-combobox.tsx";
 import { SellerCombobox } from "./seller-combobox.tsx";
 import { useToast } from "./toast.tsx";
 import { Button } from "./ui/button.tsx";
@@ -37,53 +43,84 @@ import {
 } from "./ui/select.tsx";
 import { Textarea } from "./ui/textarea.tsx";
 
-const createLeadFormSchema = createLeadSchema.extend({
-  responsibleId: z.uuid("Selecione um vendedor responsável"),
-  source: z.enum(leadSourceSchema.options, {
-    message: "Selecione a origem do lead",
-  }),
+const createDealFormSchema = createDealSchema.extend({
+  description: z.string().max(1000).nullable().optional(),
+  expectedCloseDate: z.iso
+    .date("Data de fechamento inválida")
+    .or(z.literal(""))
+    .optional(),
+  leadId: z.uuid("Selecione uma lead"),
+  responsibleId: z
+    .uuid("Seller responsável inválido")
+    .or(z.literal(""))
+    .optional(),
+  status: dealStatusSchema,
+  title: z
+    .string()
+    .min(1, "Título é obrigatório")
+    .max(150, "Título deve ter no máximo 150 caracteres"),
+  value: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value) {
+        return true;
+      }
+      const parsed = parseCurrency(value);
+      return parsed !== null && parsed > 0 && parsed <= MAX_DEAL_VALUE;
+    }, "Valor deve ser um número positivo com no máximo 2 casas decimais"),
 });
 
-type CreateLeadFormInput = z.infer<typeof createLeadFormSchema>;
+type CreateDealFormInput = z.infer<typeof createDealFormSchema>;
 
-interface CreateLeadModalProps {
+interface CreateDealModalProps {
   onClose: () => void;
 }
 
-function CreateLeadModal({ onClose }: CreateLeadModalProps) {
+function CreateDealModal({ onClose }: CreateDealModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const createLeadMutation = useCreateLeadMutation();
+  const createDealMutation = useCreateDealMutation();
   const sellersQuery = useSellersQuery();
 
-  const form = useForm<CreateLeadFormInput>({
+  const form = useForm<CreateDealFormInput>({
     defaultValues: {
-      companyName: "",
       description: "",
-      email: "",
-      fullName: "",
+      expectedCloseDate: "",
+      leadId: "",
       responsibleId: "",
-      source: undefined,
-      whatsapp: "",
+      status: "open",
+      title: "",
+      value: "",
     },
     mode: "onChange",
-    resolver: zodResolver(createLeadFormSchema),
+    resolver: zodResolver(createDealFormSchema),
   });
 
   const handleClose = useCallback(() => {
-    if (!createLeadMutation.isPending) {
+    if (!createDealMutation.isPending) {
       onClose();
     }
-  }, [createLeadMutation.isPending, onClose]);
+  }, [createDealMutation.isPending, onClose]);
 
-  function onSubmit(data: CreateLeadFormInput) {
-    createLeadMutation.mutate(data, {
+  function onSubmit(data: CreateDealFormInput) {
+    const input: CreateDealInput = {
+      description: data.description?.trim() || null,
+      expectedCloseDate: data.expectedCloseDate || null,
+      leadId: data.leadId,
+      responsibleId: data.responsibleId || undefined,
+      status: data.status,
+      title: data.title,
+      value: parseCurrency(data.value ?? ""),
+    };
+
+    createDealMutation.mutate(input, {
       onError: (error) => {
         toast(error.message);
       },
       onSuccess: () => {
-        toast("Lead salvo com sucesso", "success");
-        queryClient.invalidateQueries({ queryKey: ["leads"] });
+        toast("Deal criado com sucesso", "success");
+        queryClient.invalidateQueries({ queryKey: ["deals"] });
         form.reset();
         onClose();
       },
@@ -95,9 +132,9 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
     <Dialog onOpenChange={(open) => !open && handleClose()} open>
       <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 px-6 pt-6">
-          <DialogTitle>Novo Lead</DialogTitle>
+          <DialogTitle>Novo Deal</DialogTitle>
           <DialogDescription>
-            Preencha os dados do potencial cliente
+            Vincule o negócio a uma lead e acompanhe a negociação
           </DialogDescription>
         </DialogHeader>
 
@@ -109,23 +146,55 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
           >
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
               <h2 className="font-semibold text-[11px] text-zinc-500 uppercase tracking-widest">
-                Informações do contato
+                Informações do negócio
               </h2>
 
               <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="leadId"
+                    // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Lead
+                          <span className="ml-0.5 text-orange-400">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <LeadCombobox
+                            emptyLabel="Selecionar lead"
+                            // biome-ignore lint/performance/noJsxPropsBind: needs form.setValue for responsible
+                            onSelect={(lead) => {
+                              form.setValue(
+                                "responsibleId",
+                                lead.responsible.id
+                              );
+                            }}
+                            onValueChange={field.onChange}
+                            placeholder="Buscar lead por nome ou empresa..."
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="fullName"
+                  name="title"
                   // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Nome Completo
+                        Título
                         <span className="ml-0.5 text-orange-400">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Ex: Roberto Carlos da Silva"
+                          placeholder="Ex: Plano anual FitLife Centro"
                           required
                           type="text"
                           {...field}
@@ -138,20 +207,60 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
 
                 <FormField
                   control={form.control}
-                  name="companyName"
+                  name="value"
                   // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Nome da Empresa
-                        <span className="ml-0.5 text-orange-400">*</span>
-                      </FormLabel>
+                      <FormLabel>Valor</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground text-sm">
+                            R$
+                          </span>
+                          <Input
+                            className="pl-9"
+                            inputMode="numeric"
+                            placeholder="0,00"
+                            type="text"
+                            {...field}
+                            // biome-ignore lint/performance/noJsxPropsBind: mask needs the input event to format the value before updating form state
+                            onChange={(event) => {
+                              const isDelete =
+                                event.nativeEvent instanceof InputEvent &&
+                                (event.nativeEvent.inputType ===
+                                  "deleteContentBackward" ||
+                                  event.nativeEvent.inputType ===
+                                    "deleteContentForward");
+                              field.onChange(
+                                nextCurrencyValue(
+                                  field.value ?? "",
+                                  event.target.value,
+                                  isDelete
+                                )
+                              );
+                            }}
+                            value={field.value ?? ""}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="expectedCloseDate"
+                  // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data de fechamento prevista</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Ex: Academia FitLife Centro"
-                          required
-                          type="text"
+                          placeholder="dd/mm/aaaa"
+                          type="date"
                           {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -161,76 +270,22 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
 
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="status"
                   // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        E-mail
-                        <span className="ml-0.5 text-orange-400">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="contato@empresa.com.br"
-                          required
-                          type="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="whatsapp"
-                  // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        WhatsApp
-                        <span className="ml-0.5 text-orange-400">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          inputMode="numeric"
-                          placeholder="(11) 99999-8888"
-                          required
-                          type="tel"
-                          {...field}
-                          // biome-ignore lint/performance/noJsxPropsBind: mask needs the input event to format the value before updating form state
-                          onChange={(event) =>
-                            field.onChange(formatWhatsApp(event.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="source"
-                  // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Origem do Lead
-                        <span className="ml-0.5 text-orange-400">*</span>
-                      </FormLabel>
+                      <FormLabel>Status</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        value={field.value ?? ""}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione a origem" />
+                            <SelectValue placeholder="Selecione o status" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {LEAD_SOURCE_OPTIONS.map((option) => (
+                          {DEAL_STATUS_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
@@ -248,13 +303,10 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
                   // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Vendedor Responsável
-                        <span className="ml-0.5 text-orange-400">*</span>
-                      </FormLabel>
+                      <FormLabel>Vendedor responsável</FormLabel>
                       <FormControl>
                         <SellerCombobox
-                          emptyLabel="Atribuir a um vendedor"
+                          emptyLabel="Padrão: vendedor da lead"
                           isPending={sellersQuery.isPending}
                           onValueChange={field.onChange}
                           placeholder="Buscar vendedor..."
@@ -277,7 +329,7 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
                         <FormLabel>Observações</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Ex: Cliente demonstrou interesse inicial em esteiras profissionais..."
+                            placeholder="Ex: Cliente pediu proposta com desconto para pagamento à vista..."
                             {...field}
                             value={field.value ?? ""}
                           />
@@ -294,8 +346,8 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
               <Button onClick={handleClose} type="button" variant="secondary">
                 Cancelar
               </Button>
-              <Button loading={createLeadMutation.isPending} type="submit">
-                Salvar Lead
+              <Button loading={createDealMutation.isPending} type="submit">
+                Salvar Deal
               </Button>
             </DialogFooter>
           </form>
@@ -305,4 +357,4 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
   );
 }
 
-export default CreateLeadModal;
+export default CreateDealModal;

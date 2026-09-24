@@ -3,7 +3,10 @@ import { dealDTOSchema, type LeadDTO } from "@sales/shared";
 import { app } from "../../../src/app.ts";
 import { HttpStatus } from "../../../src/utils/http-status.ts";
 import { createLeadViaHttp } from "../../lead/e2e/helpers.ts";
-import { createSellerViaHttp } from "../../seller/e2e/helpers.ts";
+import {
+  createSellerViaHttp,
+  registerAndLogin,
+} from "../../seller/e2e/helpers.ts";
 import { createDealPayload, createDealViaHttp } from "./helpers.ts";
 import { DealRoutes } from "./routes.ts";
 
@@ -69,6 +72,36 @@ describe("Create Deal", () => {
     expect(deal.description).toBe("Negociação em andamento");
     expect(deal.expectedCloseDate).toBe("2026-10-15");
     expect(deal.value).toBe(99.9);
+  });
+
+  test("creates deal with explicit status", async () => {
+    const response = await createDealViaHttp({
+      status: "won",
+      title: "Deal fechado",
+    });
+
+    expect(response.statusCode).toBe(HttpStatus.CREATED);
+    expect(dealDTOSchema.parse(response.json()).status).toBe("won");
+  });
+
+  test("defaults status to open when status is omitted", async () => {
+    const leadResponse = await createLeadViaHttp();
+    const payload = await createDealPayload({
+      leadId: leadResponse.json<{ id: string }>().id,
+      title: "Deal sem status",
+    });
+    const { status: _status, ...payloadWithoutStatus } = payload;
+
+    const { token } = await registerAndLogin();
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${token}` },
+      method: "POST",
+      payload: payloadWithoutStatus,
+      url: DealRoutes.POST.CREATE,
+    });
+
+    expect(response.statusCode).toBe(HttpStatus.CREATED);
+    expect(dealDTOSchema.parse(response.json()).status).toBe("open");
   });
 
   test("creates deal with null value", async () => {

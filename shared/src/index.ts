@@ -1,6 +1,7 @@
 export {
   type CreateDealInput,
   createDealSchema,
+  MAX_DEAL_VALUE,
 } from "./schemas/deal/create.ts";
 export { type DealStatus, dealStatusSchema } from "./schemas/deal/deal.ts";
 export { type DealDTO, dealDTOSchema } from "./schemas/deal/dto.ts";

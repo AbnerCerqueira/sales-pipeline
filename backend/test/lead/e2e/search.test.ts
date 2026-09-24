@@ -20,6 +20,26 @@ describe("Search Leads", () => {
     expect(items[0].fullName).toBe("Ada Lovelace");
   });
 
+  test("returns leads matching company name", async () => {
+    const target = await createLeadViaHttp({
+      companyName: "Acme Analytics",
+      fullName: "Grace Hopper",
+    });
+    await createLeadViaHttp({
+      companyName: "Globex",
+      fullName: "Alan Turing",
+    });
+
+    const response = await searchLeadsViaHttp({ name: "acme" });
+
+    expect(response.statusCode).toBe(HttpStatus.OK);
+
+    const { items } = response.json<SearchLeadsResponse>();
+    expect(items).toHaveLength(1);
+    expect(items[0].id).toBe(target.json<LeadDTO>().id);
+    expect(items[0].companyName).toBe("Acme Analytics");
+  });
+
   test("returns only leads owned by the informed seller", async () => {
     const seller = await createSellerViaHttp();
     const otherSeller = await createSellerViaHttp();
