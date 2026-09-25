@@ -56,6 +56,8 @@ function useAppShell(): AppShellActions {
 
 type ActiveModal = "deal" | "lead" | null;
 
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "sales-pipeline:sidebar-collapsed";
+
 interface AppShellProps {
   children: ReactNode;
 }
@@ -69,20 +71,16 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 }
 
 function miniNavLinkClass({ isActive }: { isActive: boolean }) {
-  return `flex w-full flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center text-[10px] leading-tight font-medium transition-colors duration-150 ${
+  return `flex w-full items-center justify-center rounded-xl py-2.5 transition-colors duration-150 ${
     isActive
       ? "bg-zinc-800/80 text-white [&_svg]:text-orange-400"
       : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100 [&_svg]:text-zinc-500"
   }`;
 }
 
-function SoonBadge({ compact = false }: { compact?: boolean }) {
+function SoonBadge() {
   return (
-    <span
-      className={`rounded-md border border-zinc-800 bg-zinc-900 font-semibold text-zinc-500 uppercase tracking-wider ${
-        compact ? "px-1 py-px text-[8px]" : "px-1.5 py-0.5 text-[9px]"
-      }`}
-    >
+    <span className="rounded-md border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 font-semibold text-[9px] text-zinc-500 uppercase tracking-wider">
       Em breve
     </span>
   );
@@ -100,12 +98,11 @@ function SidebarLink({ item, mini = false, onNavigate }: SidebarLinkProps) {
       return (
         <span
           aria-disabled="true"
-          className="flex w-full cursor-not-allowed flex-col items-center gap-1 rounded-xl px-1 py-2.5 text-center font-medium text-[10px] text-zinc-600 leading-tight"
+          className="flex w-full cursor-not-allowed items-center justify-center rounded-xl py-2.5 text-zinc-600"
           title={`${item.label} — em breve`}
         >
           <item.icon size={20} strokeWidth={2.2} />
-          <span className="w-full truncate text-center">{item.label}</span>
-          <SoonBadge compact />
+          <span className="sr-only">{item.label} — em breve</span>
         </span>
       );
     }
@@ -126,11 +123,14 @@ function SidebarLink({ item, mini = false, onNavigate }: SidebarLinkProps) {
 
   if (mini) {
     return (
-      <NavLink className={miniNavLinkClass} onClick={onNavigate} to={item.to}>
+      <NavLink
+        aria-label={item.label}
+        className={miniNavLinkClass}
+        onClick={onNavigate}
+        title={item.label}
+        to={item.to}
+      >
         <item.icon size={20} strokeWidth={2.2} />
-        <span className="w-full truncate text-center" title={item.label}>
-          {item.label}
-        </span>
       </NavLink>
     );
   }
@@ -146,11 +146,12 @@ function AppShell({ children }: AppShellProps) {
   const meQuery = useMeQuery();
   const { logout } = useAuth();
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true"
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
-  const seller = meQuery.data;
   useErrorToast(meQuery);
-  const displayName = seller?.name ?? "…";
+  const displayName = meQuery.data?.name ?? "…";
   const initials = initialsOf(displayName);
 
   const openLeadModal = useCallback(() => {
@@ -169,11 +170,13 @@ function AppShell({ children }: AppShellProps) {
 
   const toggleSidebar = useCallback(() => {
     if (window.matchMedia("(min-width: 768px)").matches) {
-      setCollapsed((current) => !current);
+      const next = !collapsed;
+      setCollapsed(next);
+      localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(next));
     } else {
       setMobileOpen(true);
     }
-  }, []);
+  }, [collapsed]);
 
   const closeMobile = useCallback(() => {
     setMobileOpen(false);
@@ -283,33 +286,6 @@ function AppShell({ children }: AppShellProps) {
                 <SidebarLink item={item} key={item.to} mini={collapsed} />
               ))}
             </nav>
-
-            {collapsed ? (
-              <div className="flex justify-center border-zinc-800/60 border-t pt-3">
-                <div
-                  className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 font-semibold text-white text-xs"
-                  title={displayName}
-                >
-                  {initials}
-                  <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-emerald-500" />
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 border-zinc-800/60 border-t px-2 pt-4">
-                <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 font-semibold text-white text-xs shadow-md shadow-orange-950/40">
-                  {initials}
-                  <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-emerald-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-sm text-white">
-                    {displayName}
-                  </p>
-                  <p className="truncate text-xs text-zinc-500">
-                    {seller?.email ?? " "}
-                  </p>
-                </div>
-              </div>
-            )}
           </aside>
 
           {mobileOpen ? (
@@ -342,20 +318,6 @@ function AppShell({ children }: AppShellProps) {
                     />
                   ))}
                 </nav>
-                <div className="flex items-center gap-3 border-zinc-800/60 border-t px-4 py-4">
-                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 font-semibold text-white text-xs">
-                    {initials}
-                    <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-emerald-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-sm text-white">
-                      {displayName}
-                    </p>
-                    <p className="truncate text-xs text-zinc-500">
-                      {seller?.email ?? " "}
-                    </p>
-                  </div>
-                </div>
               </aside>
             </div>
           ) : null}
