@@ -21,7 +21,11 @@ export const app = fastify({ loggerInstance: logger })
   .setSerializerCompiler(serializerCompiler)
   .withTypeProvider<ZodTypeProvider>();
 
-app.register(fastifyCors);
+app.register(fastifyCors, {
+  // O default do @fastify/cors permite só GET,HEAD,POST — o preflight do
+  // browser bloquearia PATCH/PUT/DELETE (ex: arrastar card no kanban).
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+});
 app.register(jwtPlugin);
 app.register(authPlugin);
 

@@ -43,7 +43,7 @@ export class DrizzleLeadRepository implements LeadRepository {
       .where(eq(leadsTable.email, email))
       .limit(1);
 
-    return row ? toDomain(row) : null;
+    return row ? leadToDomain(row) : null;
   }
 
   async findById(id: string) {
@@ -53,7 +53,7 @@ export class DrizzleLeadRepository implements LeadRepository {
       .where(eq(leadsTable.id, id))
       .limit(1);
 
-    return row ? toDomain(row) : null;
+    return row ? leadToDomain(row) : null;
   }
 
   async search(
@@ -90,7 +90,7 @@ export class DrizzleLeadRepository implements LeadRepository {
 
     return {
       items: rows.map(({ lead, responsible }) => ({
-        lead: toDomain(lead),
+        lead: leadToDomain(lead),
         responsible: sellerToDomain(responsible),
       })),
       page: filters.page,
@@ -100,7 +100,7 @@ export class DrizzleLeadRepository implements LeadRepository {
   }
 }
 
-function toDomain(row: typeof leadsTable.$inferSelect) {
+export function leadToDomain(row: typeof leadsTable.$inferSelect) {
   return Lead.fromPersistence(
     {
       companyName: row.companyName,

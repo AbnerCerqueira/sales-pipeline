@@ -43,6 +43,14 @@ export class Deal extends Entity<DealProps> {
     return this.props.expectedCloseDate;
   }
 
+  mutate(props: Partial<DealProps>): Deal {
+    return new Deal(
+      { ...this.props, ...props },
+      { createdAt: this.createdAt, updatedAt: new Date() },
+      this.id
+    );
+  }
+
   toDTO(responsible: SellerSummary, lead: LeadSummary): DealDTO {
     return {
       createdAt: this.createdAt,
