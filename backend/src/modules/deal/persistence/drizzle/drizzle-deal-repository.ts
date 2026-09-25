@@ -1,5 +1,5 @@
 import { dealStatusSchema, type ListDealsQuery } from "@sales/shared";
-import { and, desc, eq, ilike, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { leadToDomain } from "../../../lead/persistence/drizzle/drizzle-lead-repository.ts";
 import { leadsTable } from "../../../lead/persistence/drizzle/lead-table.ts";
@@ -46,6 +46,20 @@ export class DrizzleDealRepository implements DealRepository {
 
   async search(filters: ListDealsQuery): Promise<DealWithRelations[]> {
     const conditions: SQL[] = [];
+
+    if (filters.leadId) {
+      conditions.push(eq(dealsTable.leadId, filters.leadId));
+    }
+
+    if (filters.name) {
+      const nameFilter = or(
+        ilike(leadsTable.fullName, `%${filters.name}%`),
+        ilike(leadsTable.companyName, `%${filters.name}%`)
+      );
+      if (nameFilter) {
+        conditions.push(nameFilter);
+      }
+    }
 
     if (filters.responsibleId) {
       conditions.push(eq(dealsTable.responsibleId, filters.responsibleId));
