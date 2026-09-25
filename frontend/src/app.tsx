@@ -8,6 +8,7 @@ import {
 import { useAuth } from "./context/auth.tsx";
 import LoginPage from "./pages/auth/login.tsx";
 import RegisterPage from "./pages/auth/register.tsx";
+import DealsKanbanPage from "./pages/deals/deals-kanban.tsx";
 import ListLeadsPage from "./pages/leads/list-leads.tsx";
 
 function RequireAuth() {
@@ -41,6 +42,7 @@ function App() {
 
         <Route element={<RequireAuth />}>
           <Route element={<ListLeadsPage />} path="/leads" />
+          <Route element={<DealsKanbanPage />} path="/deals" />
         </Route>
 
         <Route element={<Navigate replace to="/leads" />} path="*" />

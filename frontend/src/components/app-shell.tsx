@@ -35,7 +35,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: LayoutGrid, label: "Dashboard", soon: true, to: "/dashboard" },
   { icon: Users, label: "Leads", to: "/leads" },
-  { icon: Handshake, label: "Negócios", soon: true, to: "/deals" },
+  { icon: Handshake, label: "Negócios", to: "/deals" },
   { icon: UserRoundCog, label: "Vendedores", soon: true, to: "/sellers" },
 ];
 
@@ -187,7 +187,6 @@ function AppShell({ children }: AppShellProps) {
   return (
     <AppShellContext.Provider value={actions}>
       <div className="min-h-screen bg-zinc-950 text-zinc-100">
-        {/* Header estilo YouTube: logo à esquerda, ações à direita */}
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-zinc-800/60 border-b bg-zinc-950/90 px-3 backdrop-blur-md md:px-4">
           <Button
             aria-label="Alternar menu"
@@ -274,7 +273,6 @@ function AppShell({ children }: AppShellProps) {
         </header>
 
         <div className="flex">
-          {/* Sidebar desktop: só navegação (expandida ou mini) */}
           <aside
             className={`sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 flex-col border-zinc-800/60 border-r bg-zinc-950 py-3 transition-[width] duration-200 md:flex ${
               collapsed ? "w-[88px] px-2" : "w-60 px-3"
@@ -314,7 +312,6 @@ function AppShell({ children }: AppShellProps) {
             )}
           </aside>
 
-          {/* Drawer mobile */}
           {mobileOpen ? (
             <div className="fixed inset-0 z-40 md:hidden">
               <button
@@ -363,7 +360,6 @@ function AppShell({ children }: AppShellProps) {
             </div>
           ) : null}
 
-          {/* Conteúdo */}
           <div className="relative min-w-0 flex-1">
             <div
               aria-hidden

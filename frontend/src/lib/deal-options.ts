@@ -16,3 +16,16 @@ export function formatDealStatus(status: DealStatus): string {
     status
   );
 }
+
+export function formatDealValue(value: number | null): string {
+  if (value === null) {
+    return "—";
+  }
+
+  return value.toLocaleString("pt-BR", {
+    currency: "BRL",
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    style: "currency",
+  });
+}

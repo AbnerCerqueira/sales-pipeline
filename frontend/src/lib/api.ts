@@ -7,6 +7,9 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3333";
 
+const CONNECTION_ERROR_MESSAGE =
+  "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.";
+
 export class SessionExpiredError extends Error {
   constructor() {
     super(SESSION_EXPIRED_MESSAGE);
@@ -32,7 +35,7 @@ async function parseBody(response: Response): Promise<unknown> {
   }
 }
 
-function errorMessage(body: unknown): string {
+function errorMessage(body: unknown, status: number): string {
   if (
     typeof body === "object" &&
     body !== null &&
@@ -41,7 +44,7 @@ function errorMessage(body: unknown): string {
   ) {
     return body.message;
   }
-  return "Erro desconhecido";
+  return `Erro inesperado no servidor (HTTP ${status})`;
 }
 
 function expireSession(sentToken: string): never {
@@ -55,18 +58,24 @@ function expireSession(sentToken: string): never {
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getAuthToken();
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: { ...authHeaders(token), ...options?.headers },
-  });
-
-  const body = await parseBody(response);
+  let response: Response;
+  let body: unknown;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: { ...authHeaders(token), ...options?.headers },
+    });
+    body = await parseBody(response);
+  } catch (cause) {
+    // Falha de rede/CORS/DNS: motivo original fica em `cause` para debug no console.
+    throw new Error(CONNECTION_ERROR_MESSAGE, { cause });
+  }
 
   if (!response.ok) {
     if (response.status === 401 && token) {
       expireSession(token);
     }
-    throw new Error(errorMessage(body));
+    throw new Error(errorMessage(body, response.status));
   }
 
   return body as T;
@@ -74,6 +83,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
+  patch: <T>(path: string, data: unknown) =>
+    request<T>(path, {
+      body: JSON.stringify(data),
+      method: "PATCH",
+    }),
   post: <T>(path: string, data: unknown) =>
     request<T>(path, {
       body: JSON.stringify(data),
