@@ -31,6 +31,7 @@ Registro das decisões de design do projeto, organizadas por tópico e contando 
 | ADR | Decisão | Status |
 |-----|---------|--------|
 | [ADR-001](features/001-paginacao-offset.md) | Paginação por offset com envelope `PaginatedResult` | Aceito |
+| [ADR-002](features/002-kanban-optimistic-update.md) | Kanban de deals com optimistic update | Aceito |
 
 ## `processo/` — como o trabalho acontece
 
