@@ -32,6 +32,7 @@ import {
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 import { useSellersQuery } from "../../hooks/use-sellers.ts";
 import { formatDealStatus, formatDealValue } from "../../lib/deal-options.ts";
+import { formatCreatedAt, formatFullDate } from "../../lib/lead-options.ts";
 import { initialsOf } from "../../lib/utils.ts";
 
 const DEAL_COLUMNS: Array<{
@@ -44,12 +45,6 @@ const DEAL_COLUMNS: Array<{
   { accent: "text-emerald-400", dot: "bg-emerald-400", status: "won" },
   { accent: "text-rose-400", dot: "bg-rose-400", status: "lost" },
 ];
-
-// O DTO traz "YYYY-MM-DD" sem fuso: sem o `T00:00:00` o JS parseria como UTC
-// e, em UTC-3, mostraria o dia anterior.
-function formatDate(date: string): string {
-  return new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR");
-}
 
 // Recebe `unknown`: valida contra as colunas conhecidas em vez de castar e descarta drop inválido.
 function resolveTargetStatus(status: unknown): DealStatus | undefined {
@@ -452,12 +447,13 @@ function DealCardView({ deal }: { deal: DealDTO }) {
         </span>
       </div>
 
-      {deal.expectedCloseDate ? (
-        <p className="mt-2 flex items-center gap-1 text-[11px] text-zinc-600">
-          <CalendarDays size={11} />
-          {formatDate(deal.expectedCloseDate)}
-        </p>
-      ) : null}
+      <p
+        className="mt-2 flex items-center gap-1 text-[11px] text-zinc-600"
+        title={`Criado em ${formatFullDate(deal.createdAt)}`}
+      >
+        <CalendarDays size={11} />
+        Criado {formatCreatedAt(deal.createdAt)}
+      </p>
     </>
   );
 }
