@@ -67,7 +67,7 @@ export class DrizzleDealRepository implements DealRepository {
       .innerJoin(leadsTable, eq(leadsTable.id, dealsTable.leadId))
       .innerJoin(sellersTable, eq(sellersTable.id, dealsTable.responsibleId))
       .where(where)
-      .orderBy(desc(dealsTable.updatedAt), desc(dealsTable.id));
+      .orderBy(desc(dealsTable.createdAt), desc(dealsTable.id));
 
     return rows.map(toDomainWithRelations);
   }
