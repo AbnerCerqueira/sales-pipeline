@@ -8,10 +8,11 @@ Organizar o backend por camadas globais (todas as rotas juntas, todos os use-cas
 
 ## Decisão
 
-Cada domínio (seller, lead, deal, comment) é uma pasta com tudo dele dentro: rotas, use-cases, entidade, repositório e persistência.
+Cada domínio (seller, lead, deal, comment) é uma pasta com tudo dele dentro: rotas, use-cases, entidade, repositório, policies e persistência.
 
 ## Consequências
 
 - Adicionar um domínio novo é criar uma pasta nova — não mexo nos existentes
 - Para entender ou mudar um domínio, fico dentro de uma pasta só
 - Se um dia um domínio precisar virar um serviço separado, o código já está agrupado
+- **Trade-off aceito — reuso entre módulos exige cuidado**: um use-case de `deal` que precisa da policy de `seller` importa de `<seller-folder>` (cross-module). Aceito esse acoplamento **explícito e direto** porque, na prática, o relacionamento é um-para-um; se o número de dependências cruzadas crescer a ponto de virar teia, o passo natural é extrair para `utils/` ou um módulo compartilhado — forçar isso agora seria indireção sem necessidade (padroes-de-codigo/ADR-005)

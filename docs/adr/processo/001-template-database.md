@@ -4,7 +4,7 @@
 
 ## Contexto
 
-Os testes e2e usam Postgres real via testcontainers. Eu queria rodar os testes **em paralelo** para ir mais rápido — o que descarta um banco único compartilhado entre workers (os testes brigariam pelos mesmos dados). Podia apagar e recriar o banco entre testes sequenciais, mas é lento. E rodar `drizzle-kit push` para cada arquivo de teste também não: são segundos que, multiplicados por N arquivos rodando em paralelo, dominam o tempo da suíte.
+Os testes e2e usam Postgres real via testcontainers. Eu queria rodá-los **em paralelo** para ir mais rápido — o que descarta um banco único compartilhado entre workers (os testes brigariam pelos mesmos dados). Apagar e recriar o banco entre testes sequenciais também não: é lento. E rodar `drizzle-kit push` para cada arquivo de teste, também não — são segundos que, multiplicados por N arquivos rodando em paralelo, dominam o tempo da suíte.
 
 ## Decisão
 
@@ -19,5 +19,5 @@ Barato o suficiente para cada worker ter seu próprio banco de verdade, o que to
 
 - Testes e2e rodam em paralelo, cada arquivo no seu próprio banco — isolamento real
 - Zero re-push de schema por worker: o custo por arquivo é um `CREATE DATABASE` quase instantâneo
-- Entre testes, limpo as tabelas com `db.delete()` no `beforeEach` — simples e explícito, sem mágica de transação
-- Nos testes unitários uso fakes escritos na mão (`MockSellerRepository`) — sem lib de mock
+- Entre testes, limpo as tabelas com `db.delete()` num `beforeEach` — simples e explícito, sem mágica de transação
+- Nos testes unitários uso fakes escritos à mão (`MockSellerRepository`) — sem lib de mock

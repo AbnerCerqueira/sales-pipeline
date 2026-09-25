@@ -6,10 +6,10 @@
 
 O kanban é a interface central do pipeline de vendas: o vendedor arrasta cards entre colunas (`open → negotiating → won/lost`) e espera que a mudança aconteça na hora. Duas abordagens eram possíveis:
 
-- **Pessimista**: aguardar o `PATCH /deal/:id` responder antes de mover o card. Se a rede demorar 300ms, o card "gruda" na coluna antiga e o usuário clica de novo — sensação de app lento em uma ação que deveria ser instantânea.
+- **Pessimista**: esperar o `PATCH /deal/:id` responder antes de mover o card. Se a rede demorar 300ms, o card "gruda" na coluna antiga e o usuário clica de novo — sensação de app lento numa ação que deveria ser instantânea.
 - **Optimistic**: mover o card imediatamente na UI e confirmar/reverter com o resultado do servidor.
 
-O kanban não impõe uma máquina de estados: qualquer status pode ir para qualquer outro, incluindo reabrir um negócio fechado. A motivação é prática — arrastar errado é um caso de uso real, e um vendedor precisa conseguir corrigir um card movido para `won` por engano sem que a API bloqueie a correção.
+O kanban não impõe uma máquina de estados: qualquer status pode ir para qualquer outro, inclusive reabrir um negócio fechado. A motivação é prática — arrastar errado é um caso de uso real, e um vendedor precisa conseguir corrigir um card movido para `won` por engano sem que a API bloqueie a correção.
 
 ### Listagem sem paginação
 
@@ -19,11 +19,11 @@ O kanban não impõe uma máquina de estados: qualquer status pode ir para qualq
 
 O kanban usa **optimistic update** via React Query:
 
-1. No `onMutate`, o cache da query é atualizado com o novo status antes da resposta chegar (card move instantaneamente).
+1. No `onMutate`, o cache da query é atualizado com o novo status antes de a resposta chegar (o card move na hora).
 2. Em erro, o cache é revertido com o snapshot capturado no `onMutate` e o toast informa o usuário.
 3. Em sucesso, o cache é sincronizado com o `DealDTO` retornado (normaliza `updatedAt` e outros campos server-side).
 
-O backend continua sendo a fonte de verdade: o `UpdateDealUseCase` valida existência do deal e do responsável, e o repository persiste. O otimismo é UX, não regra de negócio.
+O backend continua sendo a fonte de verdade: o `UpdateDealUseCase` valida a existência do deal e do responsável, e o repository persiste. O otimismo é UX, não regra de negócio.
 
 `PATCH` com `status` igual ao atual é idempotente (no-op válido).
 

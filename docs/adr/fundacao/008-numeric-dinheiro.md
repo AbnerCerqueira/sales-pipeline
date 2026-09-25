@@ -6,9 +6,9 @@
 
 O Deal precisa armazenar um valor monetário em BRL (`value`). As opções clássicas no Postgres:
 
-- **`real` / `double precision`** — ponto flutuante binário; não representam exatamente `0.1` e acumulam erro em somas/roundings (clássico `0.1 + 0.2 !== 0.3`). Inaceitável para dinheiro.
-- **`integer` em centavos** — exato e rápido, mas empurra a convenção "×100 / ÷100" para todo código que lê/escreve (domínio, DTO, frontend, testes). Fácil de esquecer a conversão e guardar `1500` querendo dizer R$ 1.500,00 em vez de R$ 15,00.
-- **`numeric(p, s)`** — decimal exato armazenado como texto pelo driver; precisão definida por schema.
+- **`real` / `double precision`** — ponto flutuante binário; não representam exatamente `0.1` e acumulam erro em somas e roundings (o clássico `0.1 + 0.2 !== 0.3`). Inaceitável para dinheiro.
+- **`integer` em centavos** — exato e rápido, mas empurra a convenção "×100 / ÷100" para todo código que lê e escreve (domínio, DTO, frontend, testes). É fácil de esquecer a conversão e guardar `1500` querendo dizer R$ 1.500,00 em vez de R$ 15,00.
+- **`numeric(p, s)`** — decimal exato, com precisão definida no schema; o driver o devolve como texto.
 
 ## Decisão
 
@@ -19,7 +19,7 @@ Usar **`numeric(12, 2)`** na coluna `deals.value`:
 value: numeric("value", { precision: 12, scale: 2 })
 ```
 
-- `precision: 12, scale: 2` → até 10 dígitos inteiros + 2 decimais (máx. `9.999.999.999,99`), validado no `createDealSchema` com `.max(9999999999.99)`
+- `precision: 12, scale: 2` → até 10 dígitos inteiros + 2 decimais (máx. `9.999.999.999,99`), validado no schema de criação do deal com `.max(MAX_DEAL_VALUE)`
 - O domínio e o DTO trabalham com `number | null` (`z.number().nullable()`)
 - Na borda de persistência: escrita com `value.toFixed(2)` e leitura com `Number(row.value)`, porque o `node-pg` devolve `numeric` como `string`
 

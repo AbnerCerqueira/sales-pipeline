@@ -4,7 +4,7 @@
 
 ## Contexto
 
-O frontend podia renderizar no servidor (Next.js, Remix) ou no cliente (SPA). SSR ajuda em SEO, primeira pintura mais rápida e compartilhamento de links públicos — coisas que importam em sites e e-commerce. Mas este projeto é um **CRM interno**: tudo fica atrás de login, não tem SEO pra fazer, e as telas são cheias de dados dinâmicos de qualquer jeito.
+O frontend podia renderizar no servidor (Next.js, Remix) ou no cliente (SPA). SSR ajuda em SEO, primeira pintura mais rápida e compartilhamento de links públicos — coisas que importam em sites e e-commerce. Mas este projeto é um **CRM interno**: tudo fica atrás de login, não tem SEO para fazer, e as telas são cheias de dados dinâmicos de qualquer jeito.
 
 ## Decisão
 
@@ -16,7 +16,7 @@ SPA com React 19 + Vite 8, e TanStack Query cuidando dos dados que vêm do backe
 
 ## Consequências
 
-- Deploy simples: o frontend é um bundle estático, qualquer CDN serve — não preciso de servidor Node só para renderizar páginas
+- **Deploy simples**: o frontend é um bundle estático, qualquer CDN serve — não preciso de servidor Node só para renderizar páginas
 - Cache, loading e revalidação ficam concentrados no React Query, em vez de espalhados entre server components, loaders e hidratação
-- A primeira carga é mais lenta que SSR e não há SEO — aceito de olhos abertos, porque um app atrás de login não precisa disso
+- **A primeira carga é mais lenta que SSR e não há SEO** — aceito de olhos abertos, porque um app atrás de login não precisa disso
 - Se um dia precisar de página pública (landing, SEO), resolvo fora do SPA
