@@ -5,6 +5,7 @@ import type {
   UpdateDealInput,
 } from "@sales/shared";
 import {
+  keepPreviousData,
   type UseMutationResult,
   useMutation,
   useQuery,
@@ -17,6 +18,14 @@ export type DealsFilters = ListDealsQuery;
 
 function buildSearchPath(filters: DealsFilters): string {
   const params = new URLSearchParams();
+
+  if (filters.leadId) {
+    params.set("leadId", filters.leadId);
+  }
+
+  if (filters.name) {
+    params.set("name", filters.name);
+  }
 
   if (filters.responsibleId) {
     params.set("responsibleId", filters.responsibleId);
@@ -37,6 +46,7 @@ const DEALS_REFETCH_INTERVAL_MS = 10_000;
 
 export function useDealsQuery(filters: DealsFilters, paused = false) {
   return useQuery({
+    placeholderData: keepPreviousData,
     queryFn: () => api.get<DealDTO[]>(buildSearchPath(filters)),
     queryKey: ["deals", filters],
     refetchInterval: () => (paused ? false : DEALS_REFETCH_INTERVAL_MS),

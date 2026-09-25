@@ -21,6 +21,7 @@ import { CalendarDays, GripVertical, Loader2, Search, X } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "../../components/app-shell.tsx";
+import { LeadCombobox } from "../../components/lead-combobox.tsx";
 import { SellerCombobox } from "../../components/seller-combobox.tsx";
 import { Input } from "../../components/ui/input.tsx";
 import UpdateDealModal from "../../components/update-deal-modal.tsx";
@@ -46,7 +47,7 @@ const DEAL_COLUMNS: Array<{
   { accent: "text-rose-400", dot: "bg-rose-400", status: "lost" },
 ];
 
-// Recebe `unknown`: valida contra as colunas conhecidas em vez de castar e descarta drop inválido.
+// Recebe `unknown`: valida contra as colunas conhecidas em vez de castar e descartar drop inválido.
 function resolveTargetStatus(status: unknown): DealStatus | undefined {
   return DEAL_COLUMNS.find((column) => column.status === status)?.status;
 }
@@ -62,6 +63,7 @@ function DealsKanbanPage() {
 function DealsKanbanContent() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [leadId, setLeadId] = useState("");
   const [responsibleId, setResponsibleId] = useState("");
   const [selectedDeal, setSelectedDeal] = useState<DealDTO | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -75,6 +77,7 @@ function DealsKanbanContent() {
   // Pausa durante arrasto/modal/PATCH pendente: um refetch no meio sobrescreveria o patch otimista.
   const dealsQuery = useDealsQuery(
     {
+      leadId: leadId || undefined,
       responsibleId: responsibleId || undefined,
       title: debouncedSearch || undefined,
     },
@@ -110,6 +113,13 @@ function DealsKanbanContent() {
 
   const clearSearch = useCallback(() => {
     setSearch("");
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
+    setLeadId("");
+    setResponsibleId("");
   }, []);
 
   const closeDealModal = useCallback(() => {
@@ -189,6 +199,9 @@ function DealsKanbanContent() {
       ? null
       : (deals.find((deal) => deal.id === activeId) ?? null);
   const isRefreshing = dealsQuery.isFetching && !dealsQuery.isPending;
+  const isFilterChanging = dealsQuery.isPlaceholderData;
+  const hasActiveFilters =
+    search.trim() !== "" || leadId !== "" || responsibleId !== "";
 
   return (
     <>
@@ -237,6 +250,15 @@ function DealsKanbanContent() {
                 </button>
               )}
             </div>
+            <LeadCombobox
+              className="w-full sm:w-64 lg:w-72"
+              emptyLabel="Lead: Todos"
+              onValueChange={setLeadId}
+              placeholder="Buscar lead por nome ou empresa..."
+              selectedPrefix="Lead: "
+              showAllLabel="Todos"
+              value={leadId}
+            />
             <SellerCombobox
               className="w-full sm:w-52"
               emptyLabel="Vendedor: Todos"
@@ -248,6 +270,16 @@ function DealsKanbanContent() {
               showAllLabel="Todos"
               value={responsibleId}
             />
+            {hasActiveFilters ? (
+              <button
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 font-medium text-orange-300 text-xs transition-colors hover:bg-orange-500/15"
+                onClick={clearFilters}
+                type="button"
+              >
+                <X size={12} />
+                Limpar filtros
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -255,7 +287,7 @@ function DealsKanbanContent() {
       <main
         className={`px-4 py-6 transition-opacity md:px-8 ${
           isRefreshing ? "opacity-60" : "opacity-100"
-        }`}
+        } ${isFilterChanging ? "pointer-events-none" : ""}`}
       >
         <DndContext
           collisionDetection={closestCenter}

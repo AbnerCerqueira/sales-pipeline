@@ -8,7 +8,6 @@ import { cn } from "../lib/utils.ts";
 import { Button } from "./ui/button.tsx";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -29,6 +28,8 @@ interface LeadComboboxProps
   onSelect?: (lead: LeadDTO) => void;
   onValueChange: (value: string) => void;
   placeholder: string;
+  selectedPrefix?: string;
+  showAllLabel?: string;
   /** Controlled value; empty string means none. */
   value: string;
 }
@@ -39,6 +40,8 @@ function LeadCombobox({
   onValueChange,
   onSelect,
   placeholder,
+  selectedPrefix = "",
+  showAllLabel,
   value,
   ...buttonProps
 }: LeadComboboxProps) {
@@ -57,11 +60,14 @@ function LeadCombobox({
     };
   }, [search]);
 
-  const leadsQuery = useLeadsQuery({
-    name: debouncedSearch || undefined,
-    page: 1,
-    pageSize: SEARCH_PAGE_SIZE,
-  });
+  const leadsQuery = useLeadsQuery(
+    {
+      name: debouncedSearch || undefined,
+      page: 1,
+      pageSize: SEARCH_PAGE_SIZE,
+    },
+    open
+  );
   useErrorToast(leadsQuery);
 
   const leads = leadsQuery.data?.items;
@@ -89,7 +95,17 @@ function LeadCombobox({
     setDebouncedSearch("");
   }
 
-  const triggerLabel = selectedLead ? selectedLead.fullName : emptyLabel;
+  const handleClear = useCallback(() => {
+    onValueChange("");
+    setSelectedLead(null);
+    setOpen(false);
+    setSearch("");
+    setDebouncedSearch("");
+  }, [onValueChange]);
+
+  const triggerLabel = selectedLead
+    ? `${selectedPrefix}${selectedLead.fullName}`
+    : emptyLabel;
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -131,17 +147,26 @@ function LeadCombobox({
             value={search}
           />
           <CommandList>
-            <CommandEmpty>
-              {isSearching ? (
-                <span className="flex items-center gap-2">
-                  <Loader2Icon className="size-4 animate-spin" />
-                  {search ? "Buscando leads..." : "Carregando leads..."}
-                </span>
-              ) : (
-                "Nenhum lead encontrado."
-              )}
-            </CommandEmpty>
+            {isSearching ? (
+              <div className="flex items-center justify-center gap-2 py-6 text-sm">
+                <Loader2Icon className="size-4 animate-spin" />
+                {search ? "Buscando leads..." : "Carregando leads..."}
+              </div>
+            ) : null}
+            {!isSearching && leads?.length === 0 ? (
+              <div className="py-6 text-center text-muted-foreground text-sm">
+                Nenhum lead encontrado.
+              </div>
+            ) : null}
             <CommandGroup>
+              {showAllLabel ? (
+                <CommandItem onSelect={handleClear} value={showAllLabel}>
+                  {showAllLabel}
+                  {value === "" ? (
+                    <CheckIcon className="ml-auto size-4" />
+                  ) : null}
+                </CommandItem>
+              ) : null}
               {leads?.map((lead) => (
                 <CommandItem
                   key={lead.id}

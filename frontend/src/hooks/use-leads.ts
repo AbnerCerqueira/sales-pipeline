@@ -13,7 +13,7 @@ export interface LeadsFilters {
   responsibleId?: string;
 }
 
-export function useLeadsQuery(filters: LeadsFilters) {
+export function useLeadsQuery(filters: LeadsFilters, enabled = true) {
   const params = new URLSearchParams({
     page: String(filters.page),
     pageSize: String(filters.pageSize),
@@ -28,6 +28,7 @@ export function useLeadsQuery(filters: LeadsFilters) {
   }
 
   return useQuery({
+    enabled,
     placeholderData: keepPreviousData,
     queryFn: () => api.get<SearchLeadsResponse>(`/lead/search?${params}`),
     queryKey: ["leads", filters],
