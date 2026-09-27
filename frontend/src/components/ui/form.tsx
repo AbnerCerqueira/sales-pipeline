@@ -106,14 +106,15 @@ function FormLabel({
 }
 
 function FormControl({ ...props }: React.ComponentProps<typeof Slot.Root>) {
-  const { error, formItemId, formDescriptionId, formMessageId } =
-    useFormField();
+  const { error, formItemId, formMessageId } = useFormField();
 
   return (
     <Slot.Root
-      aria-describedby={
-        error ? `${formDescriptionId} ${formMessageId}` : `${formDescriptionId}`
-      }
+      // Só referencia o id da mensagem quando ela existe. O shadcn original
+      // apontava sempre para `formDescriptionId`, que só é renderizado por um
+      // `FormDescription` opcional — um `aria-describedby` quebrado é pior que
+      // nenhum. Nenhum formulário do app usa `FormDescription` hoje.
+      aria-describedby={error ? formMessageId : undefined}
       aria-invalid={!!error}
       data-slot="form-control"
       id={formItemId}

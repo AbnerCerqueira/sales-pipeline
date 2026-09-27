@@ -153,7 +153,12 @@ function LeadCombobox({
                 {search ? "Buscando leads..." : "Carregando leads..."}
               </div>
             ) : null}
-            {!isSearching && leads?.length === 0 ? (
+            {!isSearching && leadsQuery.isError ? (
+              <div className="py-6 text-center text-destructive text-sm">
+                Erro ao carregar os leads.
+              </div>
+            ) : null}
+            {!(isSearching || leadsQuery.isError) && leads?.length === 0 ? (
               <div className="py-6 text-center text-muted-foreground text-sm">
                 Nenhum lead encontrado.
               </div>

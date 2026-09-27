@@ -116,7 +116,7 @@ function UpdateDealModal({ deal, onClose }: UpdateDealModalProps) {
       {
         // Erro já é tostado pelo onError do hook (que também cobre o drop no kanban).
         onSuccess: () => {
-          toast("Deal atualizado com sucesso", "success");
+          toast("Negócio atualizado com sucesso", "success");
           onClose();
         },
       }
@@ -128,7 +128,7 @@ function UpdateDealModal({ deal, onClose }: UpdateDealModalProps) {
     <Dialog onOpenChange={(open) => !open && handleClose()} open>
       <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 px-6 pt-6">
-          <DialogTitle>Editar deal</DialogTitle>
+          <DialogTitle>Editar negócio</DialogTitle>
           <DialogDescription>
             {deal.lead.companyName} — responsável atual: {deal.responsible.name}
           </DialogDescription>
@@ -208,7 +208,7 @@ function UpdateDealModal({ deal, onClose }: UpdateDealModalProps) {
                   // biome-ignore lint/performance/noJsxPropsBind: FormField render is the standard RHF pattern
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data de fechamento prevista</FormLabel>
+                      <FormLabel>Fechamento previsto em</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="dd/mm/aaaa"

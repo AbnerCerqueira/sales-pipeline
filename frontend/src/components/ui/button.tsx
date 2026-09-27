@@ -61,6 +61,7 @@ function Button({
 
   return (
     <Comp
+      aria-busy={loading || undefined}
       className={cn(buttonVariants({ className, size, variant }))}
       data-size={size}
       data-slot="button"

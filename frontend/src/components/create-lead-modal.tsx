@@ -95,7 +95,7 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
     <Dialog onOpenChange={(open) => !open && handleClose()} open>
       <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 px-6 pt-6">
-          <DialogTitle>Novo Lead</DialogTitle>
+          <DialogTitle>Novo lead</DialogTitle>
           <DialogDescription>
             Preencha os dados do potencial cliente
           </DialogDescription>
@@ -217,7 +217,7 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Origem do Lead
+                        Origem do lead
                         <span className="ml-0.5 text-orange-400">*</span>
                       </FormLabel>
                       <Select
@@ -295,7 +295,7 @@ function CreateLeadModal({ onClose }: CreateLeadModalProps) {
                 Cancelar
               </Button>
               <Button loading={createLeadMutation.isPending} type="submit">
-                Salvar Lead
+                Salvar lead
               </Button>
             </DialogFooter>
           </form>

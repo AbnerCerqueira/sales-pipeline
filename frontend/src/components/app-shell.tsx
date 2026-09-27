@@ -217,14 +217,14 @@ function AppShell({ children }: AppShellProps) {
               variant="secondary"
             >
               <UserPlus size={16} strokeWidth={2.5} />
-              Novo Lead
+              Novo lead
             </Button>
             <Button
-              aria-label="Novo Lead"
+              aria-label="Novo lead"
               className="sm:hidden"
               onClick={openLeadModal}
               size="icon-sm"
-              title="Novo Lead"
+              title="Novo lead"
               type="button"
               variant="secondary"
             >
@@ -238,14 +238,14 @@ function AppShell({ children }: AppShellProps) {
               type="button"
             >
               <Handshake size={16} strokeWidth={2.5} />
-              Novo Deal
+              Novo negócio
             </Button>
             <Button
-              aria-label="Novo Deal"
+              aria-label="Novo negócio"
               className="sm:hidden"
               onClick={openDealModal}
               size="icon-sm"
-              title="Novo Deal"
+              title="Novo negócio"
               type="button"
             >
               <Handshake size={16} strokeWidth={2.5} />
@@ -349,8 +349,11 @@ function Wordmark() {
         <Handshake className="text-white" size={17} strokeWidth={2.4} />
       </span>
       <span className="font-bold text-[17px] tracking-tight">
-        <span className="text-white">Sales</span>
-        <span className="text-orange-500">Pipeline</span>
+        {/* Em telas estreitas o wordmark inteiro não caberia ao lado das ações sem sobrepor. */}
+        <span className="hidden sm:inline">
+          <span className="text-white">Sales</span>
+          <span className="text-orange-500">Pipeline</span>
+        </span>
         <span className="ml-1.5 hidden rounded-md border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 align-middle font-semibold text-[9px] text-orange-400 uppercase tracking-widest sm:inline-block">
           CRM
         </span>

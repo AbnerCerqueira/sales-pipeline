@@ -119,7 +119,7 @@ function CreateDealModal({ onClose }: CreateDealModalProps) {
         toast(error.message);
       },
       onSuccess: () => {
-        toast("Deal criado com sucesso", "success");
+        toast("Negócio criado com sucesso", "success");
         queryClient.invalidateQueries({ queryKey: ["deals"] });
         form.reset();
         onClose();
@@ -132,7 +132,7 @@ function CreateDealModal({ onClose }: CreateDealModalProps) {
     <Dialog onOpenChange={(open) => !open && handleClose()} open>
       <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 px-6 pt-6">
-          <DialogTitle>Novo Deal</DialogTitle>
+          <DialogTitle>Novo negócio</DialogTitle>
           <DialogDescription>
             Vincule o negócio a uma lead e acompanhe a negociação
           </DialogDescription>
@@ -347,7 +347,7 @@ function CreateDealModal({ onClose }: CreateDealModalProps) {
                 Cancelar
               </Button>
               <Button loading={createDealMutation.isPending} type="submit">
-                Salvar Deal
+                Salvar negócio
               </Button>
             </DialogFooter>
           </form>
