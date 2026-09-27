@@ -1,12 +1,11 @@
 import type { SellerDTO } from "@sales/shared";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, Loader2Icon } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
 import { cn } from "../lib/utils.ts";
 import { Button } from "./ui/button.tsx";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -18,6 +17,8 @@ interface SellerComboboxProps
   extends Omit<React.ComponentProps<"button">, "onChange" | "value"> {
   /** Label when nothing is selected (or "all" is selected). */
   emptyLabel: string;
+  /** Falha na query de vendedores — não confundir com lista vazia. */
+  isError?: boolean;
   isPending?: boolean;
   onValueChange: (value: string) => void;
   placeholder: string;
@@ -33,6 +34,7 @@ interface SellerComboboxProps
 function SellerCombobox({
   className,
   emptyLabel,
+  isError = false,
   isPending = false,
   onValueChange,
   placeholder,
@@ -47,6 +49,9 @@ function SellerCombobox({
   const triggerLabel = selected
     ? `${selectedPrefix}${selected.name}`
     : emptyLabel;
+  // `showAllLabel` sempre injeta um CommandItem, então o CommandEmpty do cmdk
+  // nunca renderiza: loading, erro e lista vazia ficam fora dele.
+  const isListPending = isPending || sellers === undefined;
 
   function handleSelect(sellerId: string) {
     onValueChange(sellerId);
@@ -81,9 +86,22 @@ function SellerCombobox({
         <Command>
           <CommandInput placeholder={placeholder} />
           <CommandList>
-            <CommandEmpty>
-              {isPending ? "Carregando vendedores..." : "Nenhum vendedor."}
-            </CommandEmpty>
+            {isListPending ? (
+              <div className="flex items-center justify-center gap-2 py-6 text-sm">
+                <Loader2Icon aria-hidden className="size-4 animate-spin" />
+                Carregando vendedores...
+              </div>
+            ) : null}
+            {isError ? (
+              <div className="py-6 text-center text-destructive text-sm">
+                Erro ao carregar os vendedores.
+              </div>
+            ) : null}
+            {!(isListPending || isError) && sellers.length === 0 ? (
+              <div className="py-6 text-center text-muted-foreground text-sm">
+                Nenhum vendedor encontrado.
+              </div>
+            ) : null}
             <CommandGroup>
               {showAllLabel ? (
                 <CommandItem

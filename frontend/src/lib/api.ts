@@ -93,4 +93,9 @@ export const api = {
       body: JSON.stringify(data),
       method: "POST",
     }),
+  put: <T>(path: string, data: unknown) =>
+    request<T>(path, {
+      body: JSON.stringify(data),
+      method: "PUT",
+    }),
 };
