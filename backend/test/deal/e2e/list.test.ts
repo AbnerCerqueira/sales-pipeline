@@ -8,7 +8,7 @@ import { createDealViaHttp } from "./helpers.ts";
 import { DealRoutes } from "./routes.ts";
 
 describe("GET /deal/search", () => {
-  test("keeps deals ordered by creation date after an update", async () => {
+  test("keeps newly created deals on top after an update", async () => {
     const { token } = await registerAndLogin();
     const headers = { authorization: `Bearer ${token}` };
     const first = (await createDealViaHttp({})).json<{ id: string }>();

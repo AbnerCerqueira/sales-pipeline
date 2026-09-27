@@ -6,4 +6,5 @@ const POST = {
 
 const GET = { SEARCH: `${BASE_URL}/search` };
 const PATCH = { UPDATE: (id: string) => `${BASE_URL}/${id}` };
-export const DealRoutes = { GET, PATCH, POST };
+const PUT = { MOVE: (id: string) => `${BASE_URL}/${id}/position` };
+export const DealRoutes = { GET, PATCH, POST, PUT };

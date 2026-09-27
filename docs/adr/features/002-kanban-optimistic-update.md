@@ -13,7 +13,7 @@ O kanban não impõe uma máquina de estados: qualquer status pode ir para qualq
 
 ### Listagem sem paginação
 
-`GET /deal/search` retorna um array completo, sem `page`/`pageSize` — diferente do padrão de `PaginatedResult` (features/ADR-001). No kanban, paginação esconde cards: um deal na página 2 simplesmente não aparece na coluna, e o vendedor trabalha com uma visão incompleta do pipeline. Filtros opcionais (`responsibleId`, `status`, `title`) atendem busca e visão por vendedor sem quebrar a completude do board. Na escala atual (time de vendas pequeno, centenas de deals), carregar tudo é mais barato e mais simples do que paginar por coluna; se o volume crescer a ponto disso doer, cursor por `updatedAt` é a evolução natural.
+`GET /deal/search` retorna um array completo, sem `page`/`pageSize` — diferente do padrão de `PaginatedResult` (features/ADR-001). No kanban, paginação esconde cards: um deal na página 2 simplesmente não aparece na coluna, e o vendedor trabalha com uma visão incompleta do pipeline. Filtros opcionais (`responsibleId`, `status`, `title`) atendem busca e visão por vendedor sem quebrar a completude do board. Na escala atual (time de vendas pequeno, centenas de deals), carregar tudo é mais barato e mais simples do que paginar por coluna.
 
 ## Decisão
 
@@ -21,7 +21,7 @@ O kanban usa **optimistic update** via React Query:
 
 1. No `onMutate`, o cache da query é atualizado com o novo status antes de a resposta chegar (o card move na hora).
 2. Em erro, o cache é revertido com o snapshot capturado no `onMutate` e o toast informa o usuário.
-3. Em sucesso, o cache é sincronizado com o `DealDTO` retornado (normaliza `updatedAt` e outros campos server-side).
+3. Em sucesso, o cache é sincronizado com o `DealDTO` retornado.
 
 O backend continua sendo a fonte de verdade: o `UpdateDealUseCase` valida a existência do deal e do responsável, e o repository persiste. O otimismo é UX, não regra de negócio.
 

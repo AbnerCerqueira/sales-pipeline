@@ -5,6 +5,7 @@ import {
   dealIdParamsSchema,
   listDealsQuerySchema,
   listDealsResponseSchema,
+  moveDealSchema,
   updateDealSchema,
 } from "@sales/shared";
 import { HttpStatus } from "../../../utils/http-status.ts";
@@ -12,6 +13,7 @@ import { SwaggerTag } from "../../../utils/swagger-tags.ts";
 import {
   createDealUseCase,
   listDealsUseCase,
+  moveDealUseCase,
   updateDealUseCase,
 } from "../instances.ts";
 
@@ -57,6 +59,32 @@ export const dealRoutes: FastifyPluginCallbackZod = (app) => {
     async (request, reply) => {
       const deals = await listDealsUseCase.execute(request.query);
       return reply.status(HttpStatus.OK).send(deals);
+    }
+  );
+
+  app.put(
+    "/:id/position",
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        body: moveDealSchema,
+        description:
+          "Move um deal no board, trocando a coluna e a ordem de uma vez. afterDealId é o card de destino: nulo manda para o topo",
+        params: dealIdParamsSchema,
+        response: {
+          [HttpStatus.OK]: dealDTOSchema,
+        },
+        security: [{ bearerAuth: [] }],
+        summary: "Mover deal no kanban",
+        tags: [SwaggerTag.DEAL],
+      },
+    },
+    async (request, reply) => {
+      const deal = await moveDealUseCase.execute(
+        request.params.id,
+        request.body
+      );
+      return reply.status(HttpStatus.OK).send(deal);
     }
   );
 

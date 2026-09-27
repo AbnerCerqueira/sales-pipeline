@@ -11,6 +11,7 @@ export {
   listDealsQuerySchema,
   listDealsResponseSchema,
 } from "./schemas/deal/list.ts";
+export { type MoveDealInput, moveDealSchema } from "./schemas/deal/move.ts";
 export {
   dealIdParamsSchema,
   type UpdateDealInput,

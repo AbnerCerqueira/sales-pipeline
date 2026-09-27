@@ -1,5 +1,6 @@
 import {
   date,
+  integer,
   numeric,
   pgTable,
   text,
@@ -17,6 +18,8 @@ export const dealsTable = pgTable("deals", {
   leadId: uuid("lead_id")
     .notNull()
     .references(() => leadsTable.id),
+  // Ranking global do board: quanto maior, mais perto do topo. Ver ADR features/003.
+  position: integer("position").notNull(),
   responsibleId: uuid("responsible_id")
     .notNull()
     .references(() => sellersTable.id),

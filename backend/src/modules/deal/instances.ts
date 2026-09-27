@@ -5,6 +5,7 @@ import { DealPolicies } from "./deal-policies.ts";
 import { DrizzleDealRepository } from "./persistence/drizzle/drizzle-deal-repository.ts";
 import { CreateDealUseCase } from "./use-cases/create-deal-use-case.ts";
 import { ListDealsUseCase } from "./use-cases/list-deals-use-case.ts";
+import { MoveDealUseCase } from "./use-cases/move-deal-use-case.ts";
 import { UpdateDealUseCase } from "./use-cases/update-deal-use-case.ts";
 
 export const dealRepository = new DrizzleDealRepository(db);
@@ -14,6 +15,7 @@ export const createDealUseCase = new CreateDealUseCase(
   dealPolicies
 );
 export const listDealsUseCase = new ListDealsUseCase(dealRepository);
+export const moveDealUseCase = new MoveDealUseCase(dealRepository);
 export const updateDealUseCase = new UpdateDealUseCase(
   dealRepository,
   dealPolicies

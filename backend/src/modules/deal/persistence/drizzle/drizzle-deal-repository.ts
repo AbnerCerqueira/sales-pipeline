@@ -1,14 +1,17 @@
 import { dealStatusSchema, type ListDealsQuery } from "@sales/shared";
-import { and, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { logger } from "../../../../utils/logger.ts";
 import { leadToDomain } from "../../../lead/persistence/drizzle/drizzle-lead-repository.ts";
 import { leadsTable } from "../../../lead/persistence/drizzle/lead-table.ts";
 import { sellerToDomain } from "../../../seller/persistence/drizzle/drizzle-seller-repository.ts";
 import { sellersTable } from "../../../seller/persistence/drizzle/seller-table.ts";
 import { Deal } from "../../deal.ts";
+import { reorderDealIds } from "../../deal-order.ts";
 import type {
   DealRepository,
   DealWithRelations,
+  MoveDealParams,
 } from "../../deal-repository.ts";
 import { dealsTable } from "./deal-table.ts";
 
@@ -26,6 +29,9 @@ export class DrizzleDealRepository implements DealRepository {
       expectedCloseDate: deal.expectedCloseDate,
       id: deal.id,
       leadId: deal.leadId,
+      // Negócio novo entra no topo do board. Como a ordenação é `position DESC`,
+      // basta superar o maior valor existente — sem renumerar nada.
+      position: sql`(SELECT COALESCE(MAX("position"), 0) + 1 FROM "deals")`,
       responsibleId: deal.responsibleId,
       status: deal.status,
       title: deal.title,
@@ -81,9 +87,85 @@ export class DrizzleDealRepository implements DealRepository {
       .innerJoin(leadsTable, eq(leadsTable.id, dealsTable.leadId))
       .innerJoin(sellersTable, eq(sellersTable.id, dealsTable.responsibleId))
       .where(where)
-      .orderBy(desc(dealsTable.createdAt), desc(dealsTable.id));
+      .orderBy(desc(dealsTable.position), desc(dealsTable.id));
 
     return rows.map(toDomainWithRelations);
+  }
+
+  move({
+    afterDealId,
+    dealId,
+    status,
+  }: MoveDealParams): Promise<DealWithRelations> {
+    // Primeira transação do projeto: um drag muda status e ordem juntos, e a
+    // renumeração toca várias linhas — sem transação o board ficaria com
+    // posições duplicadas no meio da requisição.
+    return this.db.transaction(async (tx) => {
+      const rows = await tx
+        .select({
+          id: dealsTable.id,
+          position: dealsTable.position,
+          status: dealsTable.status,
+        })
+        .from(dealsTable)
+        .orderBy(desc(dealsTable.position), desc(dealsTable.id));
+
+      const moved = rows.find((row) => row.id === dealId);
+      if (!moved) {
+        throw new Error("Deal not found after move");
+      }
+
+      const reordered = reorderDealIds(
+        rows.map((row) => row.id),
+        dealId,
+        afterDealId
+      );
+
+      if (moved.status !== status) {
+        logger.info(
+          { dealId, fromStatus: moved.status, toStatus: status },
+          "Deal status changed by move"
+        );
+      }
+
+      const currentPosition = new Map(
+        rows.map((row) => [row.id, row.position])
+      );
+      // `reordered` está em ordem de exibição e a ordenação do board é
+      // `position DESC`: o primeiro da lista recebe o maior `position`.
+      const changed = reordered
+        .map((id, index) => ({ id, position: reordered.length - index }))
+        .filter((row) => currentPosition.get(row.id) !== row.position);
+
+      await Promise.all(
+        changed.map((row) =>
+          tx
+            .update(dealsTable)
+            .set({ position: row.position })
+            .where(eq(dealsTable.id, row.id))
+        )
+      );
+
+      const [updated] = await tx
+        .update(dealsTable)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(dealsTable.id, dealId))
+        .returning();
+
+      const [relations] = await tx
+        .select({ lead: leadsTable, responsible: sellersTable })
+        .from(dealsTable)
+        .innerJoin(leadsTable, eq(leadsTable.id, dealsTable.leadId))
+        .innerJoin(sellersTable, eq(sellersTable.id, dealsTable.responsibleId))
+        .where(eq(dealsTable.id, dealId))
+        .limit(1);
+
+      if (!(updated && relations)) {
+        throw new Error("Deal not found after move");
+      }
+
+      return toDomainWithRelations({ deal: updated, ...relations });
+    });
   }
 
   async update(deal: Deal): Promise<DealWithRelations> {

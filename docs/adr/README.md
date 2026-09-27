@@ -34,6 +34,7 @@ Cada ADR documenta três coisas que um `README` ou um comentário de código nã
 |-----|---------|--------|
 | [ADR-001](features/001-paginacao-offset.md) | Paginação por offset com envelope `PaginatedResult` | Aceito |
 | [ADR-002](features/002-kanban-optimistic-update.md) | Kanban de deals com optimistic update | Aceito |
+| [ADR-003](features/003-ordem-manual-kanban.md) | Ordem manual no kanban com campo `position` | Aceito |
 
 ## `processo/` — como o trabalho acontece
 
