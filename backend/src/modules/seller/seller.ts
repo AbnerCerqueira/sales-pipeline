@@ -26,11 +26,11 @@ export class Seller extends Entity<SellerProps> {
 
   toDTO(): SellerDTO {
     return {
-      createdAt: this.createdAt,
+      createdAt: this.createdAt.toISOString(),
       email: this.email,
       id: this.id,
       name: this.name,
-      updatedAt: this.updatedAt,
+      updatedAt: this.updatedAt.toISOString(),
     };
   }
 

@@ -3,7 +3,7 @@ import { sellersTable } from "../../../seller/persistence/drizzle/seller-table.t
 
 export const leadsTable = pgTable("leads", {
   companyName: text("company_name").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: false }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   description: text(),
   email: text().notNull().unique(),
   fullName: text("full_name").notNull(),
@@ -12,6 +12,6 @@ export const leadsTable = pgTable("leads", {
     .notNull()
     .references(() => sellersTable.id),
   source: text().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: false }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   whatsapp: text().notNull(),
 });

@@ -79,7 +79,7 @@ describe("PATCH /deal/:id", () => {
     const deal = dealDTOSchema.parse(updated.json());
     expect(updated.statusCode).toBe(HttpStatus.OK);
     expect(deal.description).toBe("Proposta enviada com desconto de 10%");
-    expect(deal.expectedCloseDate).toBe("2026-10-15");
+    expect(deal.expectedCloseDate).toBe("2026-10-15T00:00:00.000Z");
     expect(deal.value).toBe(950.25);
   });
 });

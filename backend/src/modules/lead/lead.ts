@@ -52,14 +52,14 @@ export class Lead extends Entity<LeadProps> {
   toDTO(responsible: SellerSummary): LeadDTO {
     return {
       companyName: this.companyName,
-      createdAt: this.createdAt,
+      createdAt: this.createdAt.toISOString(),
       description: this.description,
       email: this.email,
       fullName: this.fullName,
       id: this.id,
       responsible,
       source: this.source,
-      updatedAt: this.updatedAt,
+      updatedAt: this.updatedAt.toISOString(),
       whatsapp: this.whatsapp,
     };
   }

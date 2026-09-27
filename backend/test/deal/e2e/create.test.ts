@@ -39,7 +39,9 @@ describe("Create Deal", () => {
     expect(deal.status).toBe("open");
     expect(deal.description).toBe(null);
     expect(deal.expectedCloseDate).toBe(null);
-    expect(deal.createdAt).toBeInstanceOf(Date);
+    expect(
+      Math.abs(Date.now() - new Date(deal.createdAt).getTime())
+    ).toBeLessThan(60_000);
   });
 
   test("creates deal with responsible override", async () => {
@@ -70,7 +72,7 @@ describe("Create Deal", () => {
     const deal = dealDTOSchema.parse(response.json());
 
     expect(deal.description).toBe("Negociação em andamento");
-    expect(deal.expectedCloseDate).toBe("2026-10-15");
+    expect(deal.expectedCloseDate).toBe("2026-10-15T00:00:00.000Z");
     expect(deal.value).toBe(99.9);
   });
 

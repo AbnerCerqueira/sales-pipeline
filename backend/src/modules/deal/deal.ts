@@ -8,13 +8,28 @@ import { Entity, type Timestamps } from "../../utils/entity.ts";
 
 export type DealProps = {
   description: string | null;
-  expectedCloseDate: string | null;
+  expectedCloseDate: Date | null;
   leadId: string;
   responsibleId: string;
   status: DealStatus;
   title: string;
   value: number | null;
 };
+
+export type DealInput = Omit<DealProps, "expectedCloseDate"> & {
+  expectedCloseDate: string | null;
+};
+
+function toCalendarDate(value: string | null): Date | null {
+  return value === null ? null : new Date(value);
+}
+
+function hydrate(props: DealInput): DealProps {
+  return {
+    ...props,
+    expectedCloseDate: toCalendarDate(props.expectedCloseDate),
+  };
+}
 
 export class Deal extends Entity<DealProps> {
   private constructor(props: DealProps, timestamps: Timestamps, id?: string) {
@@ -39,13 +54,24 @@ export class Deal extends Entity<DealProps> {
   get description(): string | null {
     return this.props.description;
   }
-  get expectedCloseDate(): string | null {
+  get expectedCloseDate(): Date | null {
     return this.props.expectedCloseDate;
   }
 
-  mutate(props: Partial<DealProps>): Deal {
+  mutate(props: Partial<DealInput>): Deal {
+    const merged: DealInput = {
+      description: this.props.description,
+      expectedCloseDate: this.props.expectedCloseDate?.toISOString() ?? null,
+      leadId: this.props.leadId,
+      responsibleId: this.props.responsibleId,
+      status: this.props.status,
+      title: this.props.title,
+      value: this.props.value,
+      ...props,
+    };
+
     return new Deal(
-      { ...this.props, ...props },
+      hydrate(merged),
       { createdAt: this.createdAt, updatedAt: new Date() },
       this.id
     );
@@ -53,25 +79,25 @@ export class Deal extends Entity<DealProps> {
 
   toDTO(responsible: SellerSummary, lead: LeadSummary): DealDTO {
     return {
-      createdAt: this.createdAt,
+      createdAt: this.createdAt.toISOString(),
       description: this.description,
-      expectedCloseDate: this.expectedCloseDate,
+      expectedCloseDate: this.expectedCloseDate?.toISOString() ?? null,
       id: this.id,
       lead,
       responsible,
       status: this.status,
       title: this.title,
-      updatedAt: this.updatedAt,
+      updatedAt: this.updatedAt.toISOString(),
       value: this.value,
     };
   }
 
-  static create(props: DealProps, id?: string) {
+  static create(props: DealInput, id?: string) {
     const now = new Date();
-    return new Deal(props, { createdAt: now, updatedAt: now }, id);
+    return new Deal(hydrate(props), { createdAt: now, updatedAt: now }, id);
   }
 
-  static fromPersistence(props: DealProps, id: string, timestamps: Timestamps) {
-    return new Deal(props, timestamps, id);
+  static fromPersistence(props: DealInput, id: string, timestamps: Timestamps) {
+    return new Deal(hydrate(props), timestamps, id);
   }
 }

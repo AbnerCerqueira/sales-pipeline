@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
+  APP_TIMEZONE: z.string().default("America/Sao_Paulo"),
   DATABASE_URL: z
     .string()
     .default("postgres://postgres:postgres@localhost:5432/sales_pipeline"),
@@ -12,3 +13,5 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse(process.env);
+
+process.env.TZ = env.APP_TIMEZONE;

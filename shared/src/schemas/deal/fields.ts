@@ -13,7 +13,7 @@ export const dealFields = {
     .date("Data de fechamento inválida")
     .nullable()
     .optional(),
-  title: z.string().min(1, "Título é obrigatório").max(150),
+  title: z.string().trim().min(1, "Título é obrigatório").max(150),
   value: z
     .number("Valor deve ser um número")
     .positive("Valor deve ser positivo")

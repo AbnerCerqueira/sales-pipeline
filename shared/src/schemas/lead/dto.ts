@@ -4,14 +4,14 @@ import { leadSourceSchema } from "./lead.ts";
 
 export const leadDTOSchema = z.object({
   companyName: z.string(),
-  createdAt: z.coerce.date(),
+  createdAt: z.iso.datetime(),
   description: z.string().nullable(),
   email: z.email(),
   fullName: z.string(),
   id: z.string(),
   responsible: sellerSummarySchema,
   source: leadSourceSchema,
-  updatedAt: z.coerce.date(),
+  updatedAt: z.iso.datetime(),
   whatsapp: z.string(),
 });
 

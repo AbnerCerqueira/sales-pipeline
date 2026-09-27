@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const sellerDTOSchema = z.object({
-  createdAt: z.coerce.date(),
+  createdAt: z.iso.datetime(),
   email: z.email(),
   id: z.string(),
   name: z.string(),
-  updatedAt: z.coerce.date(),
+  updatedAt: z.iso.datetime(),
 });
 
 export type SellerDTO = z.infer<typeof sellerDTOSchema>;

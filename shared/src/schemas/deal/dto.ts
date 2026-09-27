@@ -4,15 +4,15 @@ import { sellerSummarySchema } from "../seller/seller.ts";
 import { dealStatusSchema } from "./deal.ts";
 
 export const dealDTOSchema = z.object({
-  createdAt: z.coerce.date(),
+  createdAt: z.iso.datetime(),
   description: z.string().nullable(),
-  expectedCloseDate: z.string().nullable(),
+  expectedCloseDate: z.iso.datetime().nullable(),
   id: z.string(),
   lead: leadSummarySchema,
   responsible: sellerSummarySchema,
   status: dealStatusSchema,
   title: z.string(),
-  updatedAt: z.coerce.date(),
+  updatedAt: z.iso.datetime(),
   value: z.number().nullable(),
 });
 

@@ -215,7 +215,7 @@ function toDomain(row: typeof dealsTable.$inferSelect) {
   return Deal.fromPersistence(
     {
       description: row.description,
-      expectedCloseDate: row.expectedCloseDate,
+      expectedCloseDate: row.expectedCloseDate?.toISOString() ?? null,
       leadId: row.leadId,
       responsibleId: row.responsibleId,
       status: dealStatusSchema.parse(row.status),
