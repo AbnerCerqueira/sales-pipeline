@@ -194,6 +194,18 @@ export function useUpdateDealMutation() {
   return mutation;
 }
 
+// O form manda "YYYY-MM-DD" e o DTO guarda instante ISO: o estado otimista
+// precisa sair no mesmo formato que o servidor devolveria.
+function optimisticCloseDate(
+  value: string | null | undefined,
+  current: string | null
+): string | null {
+  if (value === undefined) {
+    return current;
+  }
+  return value === null ? null : new Date(value).toISOString();
+}
+
 // Merge campo a campo: `??` apagaria null preenchido de propósito (ex: description)
 // e `responsibleId` não existe no DealDTO (só o resumo em `responsible`).
 export function applyOptimisticPatch(
@@ -204,10 +216,10 @@ export function applyOptimisticPatch(
     ...deal,
     description:
       data.description === undefined ? deal.description : data.description,
-    expectedCloseDate:
-      data.expectedCloseDate === undefined
-        ? deal.expectedCloseDate
-        : data.expectedCloseDate,
+    expectedCloseDate: optimisticCloseDate(
+      data.expectedCloseDate,
+      deal.expectedCloseDate
+    ),
     status: data.status === undefined ? deal.status : data.status,
     title: data.title === undefined ? deal.title : data.title,
     value: data.value === undefined ? deal.value : data.value,

@@ -1,13 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { DealDTO } from "@sales/shared";
-import { MAX_DEAL_VALUE, updateDealSchema } from "@sales/shared";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { useUpdateDealMutation } from "../hooks/use-deals.ts";
 import { useSellersQuery } from "../hooks/use-sellers.ts";
+import {
+  type UpdateDealFormInput,
+  updateDealFormSchema,
+} from "../lib/deal-form-schema.ts";
 import { DEAL_STATUS_OPTIONS } from "../lib/deal-options.ts";
-import { nextCurrencyValue, parseCurrency } from "../lib/masks.ts";
+import {
+  formatCurrencyInput,
+  nextCurrencyValue,
+  parseCurrency,
+} from "../lib/masks.ts";
 import { SellerCombobox } from "./seller-combobox.tsx";
 import { useToast } from "./toast.tsx";
 import { Button } from "./ui/button.tsx";
@@ -37,41 +43,9 @@ import {
 } from "./ui/select.tsx";
 import { Textarea } from "./ui/textarea.tsx";
 
-const updateDealFormSchema = updateDealSchema.extend({
-  description: z.string().max(1000).nullable().optional(),
-  expectedCloseDate: z.iso
-    .date("Data de fechamento inválida")
-    .or(z.literal(""))
-    .optional(),
-  responsibleId: z.uuid("Seller responsável inválido").or(z.literal("")),
-  title: z
-    .string()
-    .min(1, "Título é obrigatório")
-    .max(150, "Título deve ter no máximo 150 caracteres"),
-  value: z
-    .string()
-    .optional()
-    .refine((value) => {
-      if (!value) {
-        return true;
-      }
-      const parsed = parseCurrency(value);
-      return parsed !== null && parsed > 0 && parsed <= MAX_DEAL_VALUE;
-    }, "Valor deve ser um número positivo com no máximo 2 casas decimais"),
-});
-
-type UpdateDealFormInput = z.infer<typeof updateDealFormSchema>;
-
 interface UpdateDealModalProps {
   deal: DealDTO;
   onClose: () => void;
-}
-
-function formatCurrencyInput(value: number | null): string {
-  if (value === null) {
-    return "";
-  }
-  return value.toFixed(2).replace(".", ",");
 }
 
 function UpdateDealModal({ deal, onClose }: UpdateDealModalProps) {
@@ -82,7 +56,7 @@ function UpdateDealModal({ deal, onClose }: UpdateDealModalProps) {
   const form = useForm<UpdateDealFormInput>({
     defaultValues: {
       description: deal.description ?? "",
-      expectedCloseDate: deal.expectedCloseDate ?? "",
+      expectedCloseDate: deal.expectedCloseDate?.slice(0, 10) ?? "",
       responsibleId: deal.responsible.id,
       status: deal.status,
       title: deal.title,
@@ -104,7 +78,7 @@ function UpdateDealModal({ deal, onClose }: UpdateDealModalProps) {
     updateDealMutation.mutate(
       {
         data: {
-          description: data.description?.trim() || null,
+          description: data.description || null,
           expectedCloseDate: data.expectedCloseDate || null,
           responsibleId: data.responsibleId,
           status: data.status,

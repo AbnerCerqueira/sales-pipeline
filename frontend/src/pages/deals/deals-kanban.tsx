@@ -47,12 +47,13 @@ import {
 } from "../../hooks/use-deals.ts";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 import { useSellersQuery } from "../../hooks/use-sellers.ts";
+import { formatDealStatus } from "../../lib/deal-options.ts";
 import {
-  formatDealStatus,
-  formatDealValue,
+  formatCreatedAt,
+  formatCurrency,
   formatExpectedCloseDate,
-} from "../../lib/deal-options.ts";
-import { formatCreatedAt, formatFullDate } from "../../lib/lead-options.ts";
+  formatFullDate,
+} from "../../lib/format.ts";
 import { initialsOf } from "../../lib/utils.ts";
 
 const DEAL_COLUMNS: Array<{
@@ -908,9 +909,9 @@ const KanbanColumn = memo(function MemoKanbanColumn({
         </div>
         <span
           className="min-w-0 truncate font-semibold text-[11px] text-zinc-400"
-          title={formatDealValue(totalValue)}
+          title={formatCurrency(totalValue)}
         >
-          {formatDealValue(totalValue)}
+          {formatCurrency(totalValue)}
         </span>
       </div>
 
@@ -1084,7 +1085,7 @@ const DealCardView = memo(function MemoDealCardView({
 
       <div className="mt-3 flex items-center justify-between gap-2">
         <span className="truncate font-semibold text-orange-300 text-sm">
-          {formatDealValue(deal.value)}
+          {formatCurrency(deal.value)}
         </span>
         <span
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-orange-500/20 bg-orange-500/10 font-semibold text-[9px] text-orange-300"

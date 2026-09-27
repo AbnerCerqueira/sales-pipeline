@@ -1,16 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  type CreateDealInput,
-  createDealSchema,
-  dealStatusSchema,
-  MAX_DEAL_VALUE,
-} from "@sales/shared";
+import type { CreateDealInput } from "@sales/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { useCreateDealMutation } from "../hooks/use-deals.ts";
 import { useSellersQuery } from "../hooks/use-sellers.ts";
+import {
+  type CreateDealFormInput,
+  createDealFormSchema,
+} from "../lib/deal-form-schema.ts";
 import { DEAL_STATUS_OPTIONS } from "../lib/deal-options.ts";
 import { nextCurrencyValue, parseCurrency } from "../lib/masks.ts";
 import { LeadCombobox } from "./lead-combobox.tsx";
@@ -42,36 +40,6 @@ import {
   SelectValue,
 } from "./ui/select.tsx";
 import { Textarea } from "./ui/textarea.tsx";
-
-const createDealFormSchema = createDealSchema.extend({
-  description: z.string().max(1000).nullable().optional(),
-  expectedCloseDate: z.iso
-    .date("Data de fechamento inválida")
-    .or(z.literal(""))
-    .optional(),
-  leadId: z.uuid("Selecione uma lead"),
-  responsibleId: z
-    .uuid("Seller responsável inválido")
-    .or(z.literal(""))
-    .optional(),
-  status: dealStatusSchema,
-  title: z
-    .string()
-    .min(1, "Título é obrigatório")
-    .max(150, "Título deve ter no máximo 150 caracteres"),
-  value: z
-    .string()
-    .optional()
-    .refine((value) => {
-      if (!value) {
-        return true;
-      }
-      const parsed = parseCurrency(value);
-      return parsed !== null && parsed > 0 && parsed <= MAX_DEAL_VALUE;
-    }, "Valor deve ser um número positivo com no máximo 2 casas decimais"),
-});
-
-type CreateDealFormInput = z.infer<typeof createDealFormSchema>;
 
 interface CreateDealModalProps {
   onClose: () => void;
@@ -105,7 +73,7 @@ function CreateDealModal({ onClose }: CreateDealModalProps) {
 
   function onSubmit(data: CreateDealFormInput) {
     const input: CreateDealInput = {
-      description: data.description?.trim() || null,
+      description: data.description || null,
       expectedCloseDate: data.expectedCloseDate || null,
       leadId: data.leadId,
       responsibleId: data.responsibleId || undefined,

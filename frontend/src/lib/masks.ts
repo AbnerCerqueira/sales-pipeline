@@ -45,7 +45,7 @@ export function whatsappHref(value: string): string | null {
   return `https://wa.me/${digits}`;
 }
 
-export function formatCurrency(value: string): string {
+function formatCurrency(value: string): string {
   const digits = value.replace(NON_DIGITS, "").slice(0, MAX_CURRENCY_DIGITS);
   if (!digits) {
     return "";
@@ -90,6 +90,10 @@ export function nextCurrencyValue(
   }
 
   return formatCurrency(input);
+}
+
+export function formatCurrencyInput(value: number | null): string {
+  return value === null ? "" : formatCurrency(value.toFixed(2));
 }
 
 export function parseCurrency(value: string): number | null {
