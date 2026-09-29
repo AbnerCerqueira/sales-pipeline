@@ -2,7 +2,7 @@ import {
   type CollisionDetection,
   DndContext,
   type DragEndEvent,
-  type DragOverEvent,
+  type DragMoveEvent,
   DragOverlay,
   type DragStartEvent,
   MouseSensor,
@@ -20,6 +20,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { DealDTO, DealStatus } from "@sales/shared";
 import {
+  defaultRangeExtractor,
+  useVirtualizer,
+  type Virtualizer,
+  type Range as VirtualRange,
+} from "@tanstack/react-virtual";
+import {
   CalendarClock,
   CalendarDays,
   GripVertical,
@@ -29,8 +35,21 @@ import {
   RefreshCw,
   SearchX,
 } from "lucide-react";
-import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  ChangeEvent,
+  KeyboardEvent,
+  MutableRefObject,
+  ReactNode,
+} from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import AppShell, { useAppShell } from "../../components/app-shell.tsx";
 import { ClearFiltersButton } from "../../components/clear-filters-button.tsx";
 import { FilterSearchInput } from "../../components/filter-search-input.tsx";
@@ -100,15 +119,126 @@ const preferCardCollision: CollisionDetection = (args) => {
   return collisions.length > 0 ? collisions : rectIntersection(args);
 };
 
-// Recebe `unknown`: valida contra as colunas conhecidas em vez de castar e descartar drop inválido.
-function resolveTargetStatus(status: unknown): DealStatus | undefined {
-  return DEAL_COLUMNS.find((column) => column.status === status)?.status;
-}
-
 /** Slot vago que o card arrastado abriria na coluna de destino. */
 interface Placeholder {
   index: number;
   status: DealStatus;
+}
+
+type ColumnVirtualizer = Virtualizer<HTMLDivElement, Element>;
+
+/** O que cada coluna publica para o cálculo do drop, atualizado a cada render. */
+interface ColumnMeasurement {
+  columnNode: HTMLDivElement | null;
+  /** Ids na ordem de exibição, para reencontrar o card arrastado. */
+  ids: string[];
+  virtualizer: ColumnVirtualizer;
+}
+
+/**
+ * Medição viva de cada coluna, por status.
+ *
+ * Com a lista virtualizada o `over` do dnd-kit não serve para achar a posição:
+ * ele só conhece os cards montados, e `indexOf(overId)` contaria a lista sem o
+ * deslocamento da lacuna. O registro entrega as medições reais para o arrasto
+ * derivar o índice da coordenada do ponteiro.
+ */
+type VirtualizerRegistry = Map<DealStatus, ColumnMeasurement>;
+
+const CARD_GAP_PX = 10;
+/**
+ * Altura média real de um card (medida em ~580 deals: min 143, média 161, max
+ * 183). Estimar abaixo da média faz a altura da coluna crescer conforme o
+ * usuário rola, e a barra de rolagem "escorrega" sob o ponteiro.
+ */
+const CARD_ESTIMATED_HEIGHT_PX = 161;
+const COLUMN_PADDING_PX = 12;
+
+/** Coluna cujo corpo contém o ponteiro, ou `null` se ele estiver fora do board. */
+function columnAtPoint(
+  registry: VirtualizerRegistry,
+  x: number,
+  y: number
+): DealStatus | null {
+  for (const { status } of DEAL_COLUMNS) {
+    const node = registry.get(status)?.columnNode;
+    if (!node) {
+      continue;
+    }
+    const rect = node.getBoundingClientRect();
+    if (
+      x >= rect.left &&
+      x <= rect.right &&
+      y >= rect.top &&
+      y <= rect.bottom
+    ) {
+      return status;
+    }
+  }
+  return null;
+}
+
+/** Deslocamento que a lacuna aplica às linhas a partir de um ponto. */
+interface PlaceholderShift {
+  /** Índice do card que a lacuna antecede; `null` quando não há lacuna. */
+  insertAt: number | null;
+  /** Altura da lacuna mais o gap. */
+  pixels: number;
+}
+
+const NO_SHIFT: PlaceholderShift = { insertAt: null, pixels: 0 };
+
+function shiftAfter(shift: PlaceholderShift, index: number): number {
+  return shift.insertAt === null || index < shift.insertAt ? 0 : shift.pixels;
+}
+
+/**
+ * Traduz "o ponteiro está em Y dentro desta coluna" no índice que
+ * `placeInColumn` entende: a posição do card já fora da lista.
+ *
+ * A lacuna não é uma linha da lista, é um deslocamento aplicado às linhas a
+ * partir de `insertAt`, então ela entra no offset. Na coluna de origem o card
+ * arrastado continua na lista e sai antes de ser reinserido, então o índice
+ * final anda um atrás.
+ */
+function dropIndexForColumn(
+  registry: VirtualizerRegistry,
+  status: DealStatus,
+  dealId: string,
+  pointerY: number,
+  shift: PlaceholderShift
+): number | null {
+  const column = registry.get(status);
+  const scrollElement = column?.virtualizer.scrollElement;
+  if (!(column && scrollElement)) {
+    return null;
+  }
+
+  const items = column.virtualizer.getVirtualItems();
+  if (items.length === 0) {
+    return 0;
+  }
+
+  const offset =
+    pointerY -
+    scrollElement.getBoundingClientRect().top +
+    scrollElement.scrollTop;
+
+  // Linha antes da qual o card cairia; sem match, ele vai para o fim.
+  let anchor = items.length;
+  for (const item of items) {
+    const top = item.start + shiftAfter(shift, item.index);
+    if (offset < top + item.size / 2) {
+      anchor = item.index;
+      break;
+    }
+  }
+  if (anchor === items.length) {
+    anchor = (items.at(-1)?.index ?? 0) + 1;
+  }
+
+  const from = column.ids.indexOf(dealId);
+  return from !== -1 && anchor > from ? anchor - 1 : anchor;
 }
 
 /** Ids em ordem de exibição, agrupados por coluna do board. */
@@ -231,6 +361,20 @@ function DealsKanbanContent() {
   const dragColumnsRef = useRef<BoardColumns | null>(null);
   // Disposição no momento em que o arrasto começou, para a guarda de noop.
   const originColumnsRef = useRef<BoardColumns | null>(null);
+  // Medição viva de cada coluna, publicada pelas próprias `KanbanColumn`.
+  const virtualizersRef = useRef<VirtualizerRegistry>(new Map());
+  // `onDragOver` roda a cada mousemove e é `useCallback` sem deps: o que ele
+  // precisa ler do evento tem que chegar por ref.
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  // Espelho do `targetSlot` para o `onDragMove` ler a lacuna que está na tela.
+  const targetSlotRef = useRef<Placeholder | null>(null);
+  // Altura da lacuna, medida e publicada pela coluna que a desenha.
+  const slotHeightRef = useRef(0);
+  // `capture` para rodar antes do dnd-kit: se o handler dele ler a ref antes
+  // desta atualizar, o índice sai de um mousemove atrás.
+  const trackPointer = useCallback((event: globalThis.MouseEvent) => {
+    pointerRef.current = { x: event.clientX, y: event.clientY };
+  }, []);
 
   const sellersQuery = useSellersQuery();
   const updateDeal = useUpdateDealMutation();
@@ -298,13 +442,16 @@ function DealsKanbanContent() {
   const deals = dealsQuery.data ?? [];
 
   const clearDragState = useCallback(() => {
+    window.removeEventListener("mousemove", trackPointer, true);
+    pointerRef.current = null;
     dragColumnsRef.current = null;
     originColumnsRef.current = null;
     setActiveId(null);
     setOverlayWidth(undefined);
+    targetSlotRef.current = null;
     setOverColumn(null);
     setTargetSlot(null);
-  }, []);
+  }, [trackPointer]);
 
   // Cancelar: sem mutação, só o estado do arrasto some.
   const cancelDrag = useCallback(() => {
@@ -328,8 +475,9 @@ function DealsKanbanContent() {
       setTargetSlot(null);
       // Overlay é position: fixed; sem congelar a largura ele "pula" ao arrastar.
       setOverlayWidth(event.active.rect.current.initial?.width);
+      window.addEventListener("mousemove", trackPointer, true);
     },
-    [deals]
+    [deals, trackPointer]
   );
 
   /**
@@ -341,69 +489,73 @@ function DealsKanbanContent() {
    * thread. Medido: 2.980 medições num arrasto de 1s, 3.700 ms de thread
    * bloqueada. Com a lista parada isso vai a zero e o reflow visual passa a ser
    * o `transform` que o dnd-kit já aplicava por baixo.
+   *
+   * É `onDragMove` e não `onDragOver` porque aqui a posição vem da geometria da
+   * lista, e não do `over`: o `onDragOver` do dnd-kit só dispara quando o `over`
+   * muda (o efeito dele depende de `[overId]`), então mover o ponteiro dentro do
+   * mesmo card não atualizaria a posição. `onDragMove` dispara a cada mousemove.
    */
-  const handleDragOver = useCallback((event: DragOverEvent) => {
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
     const dealId = event.active.id;
-    const overId = event.over?.id;
+    const pointer = pointerRef.current;
     const { current } = dragColumnsRef;
-    if (typeof dealId !== "string" || typeof overId !== "string" || !current) {
+    if (typeof dealId !== "string" || !pointer || !current) {
       return;
     }
 
-    // O `data` do card carrega o status do SERVIDOR, que não é a coluna em que
-    // ele está sendo exibido durante o arrasto — usar isso acenderia a coluna
-    // de origem quando o ponteiro está sobre o próprio card. O id não mente:
-    // o droppable da coluna tem `id === status`.
-    setOverColumn(
-      resolveTargetStatus(overId) ?? findColumnOf(current, overId) ?? null
+    // Fora do board não há destino: a última posição válida fica valendo.
+    const targetColumn = columnAtPoint(
+      virtualizersRef.current,
+      pointer.x,
+      pointer.y
     );
-
-    // `over` é o próprio card: realocar aqui geraria trabalho por pixel.
-    if (overId === dealId) {
+    if (!targetColumn) {
       return;
     }
 
-    const targetColumn = resolveTargetStatus(overId);
-    // `over` é a coluna inteira quando o ponteiro está na área vazia dela.
-    const next = targetColumn
-      ? placeInColumn(
-          current,
-          dealId,
-          targetColumn,
-          current[targetColumn].length
-        )
-      : (() => {
-          const target = findColumnOf(current, overId);
-          return target
-            ? placeInColumn(
-                current,
-                dealId,
-                target,
-                current[target].indexOf(overId)
-              )
-            : null;
-        })();
+    // O deslocamento que está na tela agora é o do slot da iteração anterior:
+    // é contra ele que o ponteiro precisa ser medido.
+    const drawn = targetSlotRef.current;
+    const shift =
+      drawn !== null && drawn.status === targetColumn
+        ? {
+            insertAt: drawn.index,
+            pixels: slotHeightRef.current + CARD_GAP_PX,
+          }
+        : NO_SHIFT;
+    const index = dropIndexForColumn(
+      virtualizersRef.current,
+      targetColumn,
+      dealId,
+      pointer.y,
+      shift
+    );
+    if (index === null) {
+      return;
+    }
 
+    const next = placeInColumn(current, dealId, targetColumn, index);
     if (!next) {
       return;
     }
 
     dragColumnsRef.current = next;
     const landed = findColumnOf(next, dealId);
-
-    if (landed === undefined) {
+    if (!landed) {
       return;
     }
 
+    setOverColumn(landed);
+
     // A lacuna só é desenhada quando o card vem de outra coluna. Dentro da
     // própria coluna quem abre espaço é o transform do dnd-kit; desenhar o
-    // slot aqui duplicaria o card. É um div comum, fora do SortableContext —
-    // por isso não altera `items` e não dispara remedição.
-    const index = next[landed].indexOf(dealId);
+    // slot aqui duplicaria o card.
+    const slot = next[landed].indexOf(dealId);
+    targetSlotRef.current = { index: slot, status: landed };
     setTargetSlot((prev) =>
-      prev !== null && prev.status === landed && prev.index === index
+      prev !== null && prev.status === landed && prev.index === slot
         ? prev
-        : { index, status: landed }
+        : { index: slot, status: landed }
     );
   }, []);
 
@@ -577,6 +729,7 @@ function DealsKanbanContent() {
         >
           <DealsBoard
             activeDeal={activeDeal}
+            activeId={activeId}
             columns={columns}
             deals={optimisticDeals}
             isDragDisabled={isPlaceholderData}
@@ -584,7 +737,7 @@ function DealsKanbanContent() {
             onClearFilters={clearFilters}
             onCreateDeal={openDealModal}
             onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
+            onDragMove={handleDragMove}
             onDragStart={handleDragStart}
             onRetry={retryDeals}
             onSelect={setSelectedDeal}
@@ -592,12 +745,14 @@ function DealsKanbanContent() {
             overlayWidth={overlayWidth}
             placeholder={targetSlot}
             sensors={sensors}
+            slotHeightRef={slotHeightRef}
             status={resolveBoardStatus(
               isPending,
               isError,
               deals.length,
               hasActiveFilters
             )}
+            virtualizersRef={virtualizersRef}
           />
         </div>
       </main>
@@ -648,6 +803,7 @@ function resolveBoardStatus(
 
 interface DealsBoardProps {
   activeDeal: DealDTO | null;
+  activeId: string | null;
   columns: BoardColumns;
   deals: DealDTO[];
   isDragDisabled: boolean;
@@ -655,7 +811,7 @@ interface DealsBoardProps {
   onClearFilters: () => void;
   onCreateDeal: () => void;
   onDragEnd: (event: DragEndEvent) => void;
-  onDragOver: (event: DragOverEvent) => void;
+  onDragMove: (event: DragMoveEvent) => void;
   onDragStart: (event: DragStartEvent) => void;
   onRetry: () => void;
   onSelect: (deal: DealDTO) => void;
@@ -663,11 +819,14 @@ interface DealsBoardProps {
   overlayWidth: number | undefined;
   placeholder: Placeholder | null;
   sensors: DndSensors;
+  slotHeightRef: MutableRefObject<number>;
   status: BoardStatus;
+  virtualizersRef: MutableRefObject<VirtualizerRegistry>;
 }
 
 function DealsBoard({
   activeDeal,
+  activeId,
   columns,
   deals,
   isDragDisabled,
@@ -675,7 +834,7 @@ function DealsBoard({
   onClearFilters,
   onCreateDeal,
   onDragEnd,
-  onDragOver,
+  onDragMove,
   onDragStart,
   onRetry,
   onSelect,
@@ -683,7 +842,9 @@ function DealsBoard({
   overlayWidth,
   placeholder,
   sensors,
+  slotHeightRef,
   status,
+  virtualizersRef,
 }: DealsBoardProps) {
   const byId = useMemo(
     () => new Map(deals.map((deal) => [deal.id, deal])),
@@ -767,7 +928,7 @@ function DealsBoard({
       collisionDetection={preferCardCollision}
       onDragCancel={onCancelDrag}
       onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
+      onDragMove={onDragMove}
       onDragStart={onDragStart}
       sensors={sensors}
     >
@@ -775,6 +936,7 @@ function DealsBoard({
         {DEAL_COLUMNS.map(({ status: columnStatus, dot, accent }) => (
           <KanbanColumn
             accent={accent}
+            activeId={activeId}
             deals={dealsByColumn.get(columnStatus) ?? NO_DEALS}
             dot={dot}
             isDragDisabled={isDragDisabled}
@@ -795,7 +957,9 @@ function DealsBoard({
                 : null
             }
             placeholderDeal={activeDeal}
+            slotHeightRef={slotHeightRef}
             status={columnStatus}
+            virtualizersRef={virtualizersRef}
           />
         ))}
       </div>
@@ -854,6 +1018,7 @@ function KanbanSkeleton() {
 
 const KanbanColumn = memo(function MemoKanbanColumn({
   accent,
+  activeId,
   deals,
   dot,
   isDragDisabled,
@@ -862,9 +1027,12 @@ const KanbanColumn = memo(function MemoKanbanColumn({
   onSelect,
   placeholder,
   placeholderDeal,
+  slotHeightRef,
   status,
+  virtualizersRef,
 }: {
   accent: string;
+  activeId: string | null;
   deals: DealDTO[];
   dot: string;
   /** Ids na ordem de exibição, com referência estável (ver memoização no board). */
@@ -875,10 +1043,97 @@ const KanbanColumn = memo(function MemoKanbanColumn({
   placeholder: Placeholder | null;
   /** Card arrastado, usado para dar ao slot a altura exata. */
   placeholderDeal: DealDTO | null;
+  slotHeightRef: MutableRefObject<number>;
   status: DealStatus;
+  virtualizersRef: MutableRefObject<VirtualizerRegistry>;
 }) {
   const { setNodeRef } = useDroppable({ data: { status }, id: status });
   const totalValue = deals.reduce((sum, deal) => sum + (deal.value ?? 0), 0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const columnNodeRef = useRef<HTMLDivElement | null>(null);
+  // A lacuna é um card invisível com a altura do card arrastado; sem medir, o
+  // deslocamento das linhas de baixo seria um palpite e a coluna saltaria.
+  const [slotHeight, setSlotHeight] = useState(0);
+  const measureSlot = useCallback(
+    (node: HTMLDivElement | null) => {
+      const height = node?.getBoundingClientRect().height ?? 0;
+      slotHeightRef.current = height;
+      setSlotHeight((prev) => (prev === height ? prev : height));
+    },
+    [slotHeightRef]
+  );
+  const setColumnNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      columnNodeRef.current = node;
+      setNodeRef(node);
+    },
+    [setNodeRef]
+  );
+
+  const activeRowIndex = useMemo(
+    () =>
+      activeId === null ? -1 : deals.findIndex((deal) => deal.id === activeId),
+    [activeId, deals]
+  );
+
+  // O card arrastado tem de continuar no DOM mesmo se a coluna rolar até ele
+  // sair da janela: o `useSortable` dele é o que sustenta o arrasto, e o nó
+  // reserva o espaço onde o overlay vai pousar.
+  const rangeExtractor = useCallback(
+    (range: VirtualRange) => {
+      const base = defaultRangeExtractor(range);
+      return activeRowIndex === -1
+        ? base
+        : [...new Set([...base, activeRowIndex])].sort((a, b) => a - b);
+    },
+    [activeRowIndex]
+  );
+
+  // O cache de altura do virtualizador é chaveado por `getItemKey`. Indexado por
+  // posição, mover ou remover um card desloca todo o resto e cada índice passa a
+  // descrever outro card — os que estão fora da janela não são remedidos, e a
+  // coluna fica com buracos e cards sobrepostos. Chaveando pelo id, a medição
+  // acompanha o card.
+  const getItemKey = useCallback(
+    (index: number) => deals[index]?.id ?? index,
+    [deals]
+  );
+
+  const columnVirtualizer = useVirtualizer<HTMLDivElement, Element>({
+    count: deals.length,
+    estimateSize: () => CARD_ESTIMATED_HEIGHT_PX,
+    gap: CARD_GAP_PX,
+    getItemKey,
+    getScrollElement: () => scrollRef.current,
+    overscan: 6,
+    paddingEnd: COLUMN_PADDING_PX,
+    paddingStart: COLUMN_PADDING_PX,
+    rangeExtractor,
+  });
+
+  /*
+   * A lacuna NÃO entra na lista virtualizada. Inserir uma linha nela deslocaria
+   * o índice de todos os cards abaixo, e o cache de medição do virtualizador é
+   * indexado por posição: o tamanho medido passaria a descrever outro card, e o
+   * que está fora da janela nunca é remedido. O resultado é a coluna com altura
+   * errada e cards se sobrepondo. Então a lista é sempre a mesma — card no
+   * índice i é sempre o mesmo card — e a lacuna é só um deslocamento.
+   */
+  const insertAt = placeholder?.index ?? null;
+  const shiftPixels = insertAt === null ? 0 : slotHeight + CARD_GAP_PX;
+  const shift: PlaceholderShift = { insertAt, pixels: shiftPixels };
+
+  // `useLayoutEffect` e não `useEffect`: o `onDragMove` lê este registro no
+  // evento seguinte, e um efeito passivo chegaria tarde com a lista anterior.
+  useLayoutEffect(() => {
+    virtualizersRef.current.set(status, {
+      columnNode: columnNodeRef.current,
+      ids: items,
+      virtualizer: columnVirtualizer,
+    });
+  }, [columnVirtualizer, items, status, virtualizersRef]);
+
+  const virtualRows = columnVirtualizer.getVirtualItems();
 
   return (
     <div
@@ -888,7 +1143,7 @@ const KanbanColumn = memo(function MemoKanbanColumn({
           : "border-zinc-800/80"
       }`}
       data-status={status}
-      ref={setNodeRef}
+      ref={setColumnNode}
     >
       <div className="flex items-center justify-between gap-3 border-zinc-800/60 border-b px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -913,46 +1168,76 @@ const KanbanColumn = memo(function MemoKanbanColumn({
         </span>
       </div>
 
-      {/* Altura limitada e scroll interno só no desktop: no mobile a coluna cresce e a página rola. */}
-      <div className="min-h-28 flex-1 space-y-2.5 p-3 md:max-h-[62vh] md:overflow-y-auto">
-        {/* O slot mora dentro do SortableContext por precisar ficar entre dois
-            cards, mas não é um item: é um div sem `useSortable`, então não
-            entra em `items` e não dispara remedição do dnd-kit. */}
+      {/*
+        Cada coluna é o próprio scroller em todo breakpoint. Com a lista
+        virtualizada a janela precisa de um elemento de scroll conhecido, e a
+        página inteira não serve: a medição de cada linha é relativa a ele.
+      */}
+      <div
+        className="max-h-[62vh] min-h-28 flex-1 overflow-y-auto"
+        ref={scrollRef}
+      >
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
-          {deals.flatMap((deal, index) => {
-            const row: ReactNode[] = [];
-            if (placeholder?.index === index && placeholderDeal !== null) {
-              row.push(<PlaceholderSlot deal={placeholderDeal} key="slot" />);
-            }
-            row.push(
-              <DealCard
-                deal={deal}
-                disabled={isDragDisabled}
-                key={deal.id}
-                onSelect={onSelect}
-                position={index + 1}
-              />
-            );
-            return row;
-          })}
-          {deals.length > 0 &&
-          placeholder !== null &&
-          placeholder.index >= deals.length &&
-          placeholderDeal !== null ? (
-            <PlaceholderSlot deal={placeholderDeal} key="slot" />
-          ) : null}
+          <div
+            className="relative px-3"
+            style={{ height: columnVirtualizer.getTotalSize() + shiftPixels }}
+          >
+            {virtualRows.map((virtualRow) => {
+              const deal = deals[virtualRow.index];
+              if (!deal) {
+                return null;
+              }
+              return (
+                <div
+                  data-index={virtualRow.index}
+                  key={deal.id}
+                  ref={columnVirtualizer.measureElement}
+                  style={{
+                    left: 0,
+                    position: "absolute",
+                    top: 0,
+                    transform: `translateY(${virtualRow.start + shiftAfter(shift, virtualRow.index)}px)`,
+                    width: "100%",
+                  }}
+                >
+                  <DealCard
+                    deal={deal}
+                    disabled={isDragDisabled}
+                    onSelect={onSelect}
+                    position={virtualRow.index + 1}
+                  />
+                </div>
+              );
+            })}
+            {insertAt !== null && placeholderDeal !== null ? (
+              // Sem altura fixada: a lacuna é medida pelo próprio conteúdo. Com
+              // `h-full` dentro de um pai cuja altura vem da medição, o
+              // resultado é 0 e o deslocamento some.
+              <div
+                className="absolute top-0 left-0 w-full"
+                ref={measureSlot}
+                style={{
+                  transform: `translateY(${columnVirtualizer.getVirtualItems().find((i) => i.index === insertAt)?.start ?? columnVirtualizer.getTotalSize()}px)`,
+                }}
+              >
+                <PlaceholderSlot deal={placeholderDeal} />
+              </div>
+            ) : null}
+          </div>
         </SortableContext>
         {deals.length === 0 ? (
-          <div
-            className={`flex h-24 items-center justify-center rounded-xl border border-dashed px-2 text-center text-xs transition-colors ${
-              isDropTarget
-                ? "border-orange-500/50 text-zinc-300"
-                : "border-zinc-800/80 text-zinc-400"
-            }`}
-          >
-            {isDropTarget
-              ? "Solte para mover para cá"
-              : "Arraste um card para cá"}
+          <div className="px-3 pb-3">
+            <div
+              className={`flex h-24 items-center justify-center rounded-xl border border-dashed px-2 text-center text-xs transition-colors ${
+                isDropTarget
+                  ? "border-orange-500/50 text-zinc-300"
+                  : "border-zinc-800/80 text-zinc-400"
+              }`}
+            >
+              {isDropTarget
+                ? "Solte para mover para cá"
+                : "Arraste um card para cá"}
+            </div>
           </div>
         ) : null}
       </div>
