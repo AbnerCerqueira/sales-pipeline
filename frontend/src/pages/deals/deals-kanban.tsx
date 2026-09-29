@@ -992,6 +992,7 @@ const DealCard = memo(function MemoDealCard({
     transform,
     transition,
   } = useSortable({
+    animateLayoutChanges: () => false,
     data: { dealId: deal.id, status: deal.status },
     disabled,
     id: deal.id,
