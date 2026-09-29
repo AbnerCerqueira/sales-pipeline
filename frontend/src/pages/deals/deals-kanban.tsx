@@ -496,8 +496,6 @@ function DealsKanbanContent() {
       ? null
       : (deals.find((deal) => deal.id === activeId) ?? null);
   const { isError, isFetching, isPending, isPlaceholderData } = dealsQuery;
-  // `isPending` só é true na primeira carga: não há dado anterior para segurar a tela.
-  const isRefreshing = isFetching && !isPending;
   const hasActiveFilters =
     search.trim() !== "" || leadId !== "" || responsibleId !== "";
 
@@ -574,7 +572,7 @@ function DealsKanbanContent() {
       <main aria-busy={isPlaceholderData} className="px-4 py-6 md:px-8">
         <div
           className={`transition-opacity ${
-            isRefreshing || isPlaceholderData ? "opacity-60" : "opacity-100"
+            isPlaceholderData ? "opacity-60" : "opacity-100"
           }`}
         >
           <DealsBoard
