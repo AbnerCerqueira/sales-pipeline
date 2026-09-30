@@ -22,6 +22,17 @@ import { DealsBoard } from "./kanban/deals-board.tsx";
 import { useDealDrag } from "./kanban/use-deal-drag.ts";
 
 /**
+ * Lista vazia com referência estável.
+ *
+ * `dealsQuery.data ?? []` alocava um array novo a cada render enquanto o
+ * primeiro load não voltava, e isso invalidava `patchedDeals` → `columns` em
+ * cadeia — que é o `items` do `SortableContext`. Nunca chegou a doer porque
+ * nesse intervalo o board mostra o skeleton, mas a referência instável é uma
+ * bomba-relógio esperando o `status` ganhar um estado novo.
+ */
+const NO_DEALS: DealDTO[] = [];
+
+/**
  * A tela do board. Fica com o que é *da tela*: filtros, queries e o modal.
  *
  * A disposição dos cards e o arrasto vivem em `kanban/use-deal-drag.ts`; a
@@ -106,7 +117,7 @@ function DealsKanbanContent() {
     dealsQuery.refetch();
   }, [dealsQuery]);
 
-  const deals = dealsQuery.data ?? [];
+  const deals = dealsQuery.data ?? NO_DEALS;
 
   // Deriva os patches pendentes no render: o onMutate do React Query roda um
   // microtask depois do mutate(), e nesse 1 commit o card voltaria à coluna de
