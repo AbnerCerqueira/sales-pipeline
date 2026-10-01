@@ -4,6 +4,7 @@ import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AppShell, { useAppShell } from "../../components/app-shell.tsx";
 import { ClearFiltersButton } from "../../components/clear-filters-button.tsx";
+import { DealDetailsSidebar } from "../../components/deal-details-sidebar.tsx";
 import { FilterSearchInput } from "../../components/filter-search-input.tsx";
 import { LeadCombobox } from "../../components/lead-combobox.tsx";
 import { SellerCombobox } from "../../components/seller-combobox.tsx";
@@ -54,6 +55,7 @@ function DealsKanbanContent() {
   const [leadId, setLeadId] = useState("");
   const [responsibleId, setResponsibleId] = useState("");
   const [selectedDeal, setSelectedDeal] = useState<DealDTO | null>(null);
+  const [editingDeal, setEditingDeal] = useState<DealDTO | null>(null);
   // Espelho do arrasto, só para pausar o polling: o `useDealDrag` é chamado
   // depois da query (ele consome a lista dela), e a query precisa saber se há
   // arrasto em andamento antes de devolver essa lista.
@@ -62,17 +64,15 @@ function DealsKanbanContent() {
   const sellersQuery = useSellersQuery();
   const updateDeal = useUpdateDealMutation();
   const moveDeal = useMoveDealMutation();
-  // Pausa durante arrasto/modal/mutação pendente: um refetch no meio sobrescreveria o patch otimista.
+  // Pausa durante arrasto/edição/mutação pendente: um refetch no meio sobrescreveria o patch otimista.
+  // A sidebar aberta (selectedDeal) não pausa — ela só lê, e o activeDeal é rederivado a cada refetch.
   const dealsQuery = useDealsQuery(
     {
       leadId: leadId || undefined,
       responsibleId: responsibleId || undefined,
       title: debouncedSearch || undefined,
     },
-    isDragging ||
-      selectedDeal !== null ||
-      updateDeal.isPending ||
-      moveDeal.isPending
+    isDragging || editingDeal !== null || moveDeal.isPending
   );
 
   useErrorToast(dealsQuery);
@@ -109,8 +109,17 @@ function DealsKanbanContent() {
     setResponsibleId("");
   }, []);
 
-  const closeDealModal = useCallback(() => {
+  const closeSidebar = useCallback(() => {
     setSelectedDeal(null);
+    setEditingDeal(null);
+  }, []);
+
+  const openEditDeal = useCallback((deal: DealDTO) => {
+    setEditingDeal(deal);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setEditingDeal(null);
   }, []);
 
   const retryDeals = useCallback(() => {
@@ -156,6 +165,17 @@ function DealsKanbanContent() {
   const { isError, isFetching, isPending, isPlaceholderData } = dealsQuery;
   const hasActiveFilters =
     search.trim() !== "" || leadId !== "" || responsibleId !== "";
+
+  // Sidebar/modal recebem sempre a versão mais fresca da lista (com patches
+  // otimistas); o snapshot do clique só entra se o deal sair dos filtros.
+  const activeDeal = selectedDeal
+    ? (optimisticDeals.find((deal) => deal.id === selectedDeal.id) ??
+      selectedDeal)
+    : null;
+  const activeEditingDeal = editingDeal
+    ? (optimisticDeals.find((deal) => deal.id === editingDeal.id) ??
+      editingDeal)
+    : null;
 
   return (
     <>
@@ -251,8 +271,16 @@ function DealsKanbanContent() {
         </div>
       </main>
 
-      {selectedDeal ? (
-        <UpdateDealModal deal={selectedDeal} onClose={closeDealModal} />
+      {activeDeal ? (
+        <DealDetailsSidebar
+          deal={activeDeal}
+          onClose={closeSidebar}
+          onEdit={openEditDeal}
+        />
+      ) : null}
+
+      {activeEditingDeal ? (
+        <UpdateDealModal deal={activeEditingDeal} onClose={closeEditModal} />
       ) : null}
     </>
   );
