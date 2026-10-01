@@ -159,7 +159,7 @@ function DealDetailsSidebar({
                 {formatCreatedAt(comment.createdAt)}
               </time>
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-300">
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm text-zinc-300">
               {comment.content}
             </p>
           </li>
@@ -239,7 +239,7 @@ function DealDetailsSidebar({
             {deal.description ? (
               <div className="col-span-2">
                 <dt className="text-xs text-zinc-500">Descrição</dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm text-zinc-300">
+                <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-300">
                   {deal.description}
                 </dd>
               </div>
