@@ -75,7 +75,9 @@ funcionando.
 
 Cada coluna tem o seu próprio scroller (`max-h-[62vh] overflow-y-auto`) e não
 renderiza todos os cards — só os que estão visíveis na janela de rolagem, mais
-alguns de folga (`overscan: 6`).
+alguns de folga (`overscan: 6`). O porquê desta escolha e o preço dela estão no
+[ADR-004](../../../../../docs/adr/features/004-virtualizacao-kanban.md); aqui
+fica o como.
 
 O padrão do `useVirtualizer` (`kanban-column.tsx`) é este e é contra-intuitivo
 na primeira vez:
