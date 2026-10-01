@@ -49,7 +49,7 @@
       "table": "deals"
     },
     {
-      "type": "date",
+      "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
