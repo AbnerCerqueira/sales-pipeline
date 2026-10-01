@@ -1,4 +1,18 @@
 export {
+  type CreateCommentInput,
+  createCommentSchema,
+} from "./schemas/comment/create.ts";
+export {
+  type CommentDTO,
+  commentDTOSchema,
+  type ListCommentsResponse,
+  listCommentsResponseSchema,
+} from "./schemas/comment/dto.ts";
+export {
+  type CommentDealParams,
+  commentDealParamsSchema,
+} from "./schemas/comment/params.ts";
+export {
   type CreateDealInput,
   createDealSchema,
 } from "./schemas/deal/create.ts";
