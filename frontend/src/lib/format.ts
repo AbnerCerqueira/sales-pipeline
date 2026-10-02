@@ -1,5 +1,13 @@
+/**
+ * Fuso de exibição do projeto — a única definição desse valor no stack.
+ *
+ * O backend e o banco trabalham em UTC (instantes em `timestamptz`, DTO em ISO
+ * com `Z`), então nada mais precisa saber de fuso. Ver
+ * `docs/adr/fundacao/010-fuso-unico-utc.md`.
+ */
 const TIMEZONE = "America/Sao_Paulo";
 
+/** `expectedCloseDate` é data de calendário ancorada em meia-noite UTC. */
 const CALENDAR_DAY = new Intl.DateTimeFormat("en-US", {
   day: "2-digit",
   month: "2-digit",

@@ -16,7 +16,8 @@ Cada ADR documenta três coisas que um `README` ou um comentário de código nã
 | [ADR-006](fundacao/006-zod-shared.md) | Schemas Zod no pacote shared | Aceito |
 | [ADR-007](fundacao/007-client-side-rendering.md) | Client-side rendering ao invés de SSR | Aceito |
 | [ADR-008](fundacao/008-numeric-dinheiro.md) | Dinheiro em `numeric(12, 2)` | Aceito |
-| [ADR-009](fundacao/009-fuso-horario.md) | Instantes em `timestamptz` e um fuso de exibição por projeto | Aceito |
+| [ADR-009](fundacao/009-fuso-horario.md) | Instantes em `timestamptz` e um fuso de exibição por projeto | Aceito (fuso de exibição: substituído pelo [ADR-010](fundacao/010-fuso-unico-utc.md)) |
+| [ADR-010](fundacao/010-fuso-unico-utc.md) | UTC em todo o stack, com um único fuso de exibição | Aceito |
 
 ## `padroes-de-codigo/` — como o código é escrito
 

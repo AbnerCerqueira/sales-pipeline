@@ -1,6 +1,8 @@
 # ADR-009: Instantes em `timestamptz` e um fuso de exibição por projeto
 
-**Status**: Aceito
+**Status**: Aceito — a seção "Um fuso de exibição" foi substituída pelo
+[ADR-010](010-fuso-unico-utc.md), que mediu o efeito de cada peça e manteve só a
+que decide a exibição. O resto deste ADR continua vigente.
 
 ## Contexto
 
