@@ -1,8 +1,13 @@
-import type { CreateDealInput, CreateLeadInput } from "@sales/shared";
-import { eq } from "drizzle-orm";
+import type {
+  CreateCommentInput,
+  CreateDealInput,
+  CreateLeadInput,
+} from "@sales/shared";
+import { sql } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { db } from "../config/db.ts";
 import { BcryptPasswordHasher } from "../lib/bcrypt-password-hasher.ts";
+import { commentsTable } from "../modules/comment/persistence/drizzle/comment-table.ts";
 import { dealsTable } from "../modules/deal/persistence/drizzle/deal-table.ts";
 import { leadsTable } from "../modules/lead/persistence/drizzle/lead-table.ts";
 import { sellersTable } from "../modules/seller/persistence/drizzle/seller-table.ts";
@@ -323,29 +328,134 @@ const DEALS: SeedDeal[] = [
   },
 ];
 
+// Mesmo contrato do use-case; o seed resolve o negócio pelo título, o autor
+// pelo e-mail e a data de criação para a thread ter chronologicalidade.
+type SeedComment = Omit<CreateCommentInput, "dealId"> & {
+  authorEmail: string;
+  /** Minutos antes de agora. Threads são ordenadas por `createdAt` crescente. */
+  minutesAgo: number;
+  dealTitle: string;
+};
+
+const COMMENTS: SeedComment[] = [
+  {
+    authorEmail: "john@example.com",
+    content:
+      "Reunião com o CTO hoje. Ele pediu SLA de 99.9% por escrito antes de aprovar.",
+    dealTitle: "Contrato Enterprise - Tech Solutions",
+    minutesAgo: 2880,
+  },
+  {
+    authorEmail: "maria@example.com",
+    content:
+      "Achei o modelo de SLA que usamos na FitLife, te mando por e-mail agora.",
+    dealTitle: "Contrato Enterprise - Tech Solutions",
+    minutesAgo: 2760,
+  },
+  {
+    authorEmail: "john@example.com",
+    content:
+      "Resposta deles: topa 4 anos se o módulo de relatórios entrar no mesmo contrato. Já refiz a proposta.",
+    dealTitle: "Contrato Enterprise - Tech Solutions",
+    minutesAgo: 90,
+  },
+  {
+    authorEmail: "joao@example.com",
+    content:
+      "Financeiro pediu 5% de desconto para fechar ainda este mês. Bato o martelo?",
+    dealTitle: "200 licenças - Distribuidora Alfa",
+    minutesAgo: 1500,
+  },
+  {
+    authorEmail: "maria@example.com",
+    content: "Com 5% a margem fica apertada, mas o volume compensa. Eu apoio.",
+    dealTitle: "200 licenças - Distribuidora Alfa",
+    minutesAgo: 1440,
+  },
+  {
+    authorEmail: "joao@example.com",
+    content:
+      "Fechado com eles. Contrato assinado, onboarding começa semana que vem.",
+    dealTitle: "Licenças anuais - Acme",
+    minutesAgo: 4320,
+  },
+  {
+    authorEmail: "maria@example.com",
+    content:
+      "Contrato assinado aqui também. Valei a pena insistirem no prazo curto.",
+    dealTitle: "PDV + e-commerce - Café do Porto",
+    minutesAgo: 2880,
+  },
+  {
+    authorEmail: "john@example.com",
+    content:
+      "Cliente quer parcelar em 4x. Preciso confirmar se o limite do advogado cobre.",
+    dealTitle: "Rastreamento de frota - Rapidez",
+    minutesAgo: 120,
+  },
+  {
+    authorEmail: "maria@example.com",
+    content:
+      "Proposta ainda no jurídico. A cobrança de ontem não teve retorno, vou insistir.",
+    dealTitle: "Automação de produção - Fase 2",
+    minutesAgo: 4320,
+  },
+  {
+    authorEmail: "joao@example.com",
+    content: "Alunos migrados atrelados ao início do semestre. Sem pressa.",
+    dealTitle: "App do aluno",
+    minutesAgo: 5760,
+  },
+  {
+    authorEmail: "john@example.com",
+    content:
+      "Adiou por causa da falta de orçamento. Retomar contato em janeiro.",
+    dealTitle: "Pedidos online - Padaria Doce Mel",
+    minutesAgo: 10_080,
+  },
+  {
+    authorEmail: "john@example.com",
+    content:
+      "Lead pediu para remarcar a demo. Sem data até agora, é o terceiro contato.",
+    dealTitle: "ERP industrial - Metalúrgica Vale Verde",
+    minutesAgo: 720,
+  },
+];
+
 function daysFromNow(days: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date;
 }
 
-async function seed() {
-  const existing = await db
-    .select({ id: sellersTable.id })
-    .from(sellersTable)
-    .where(eq(sellersTable.email, SELLERS[0].email))
-    .limit(1);
+function minutesAgo(minutes: number): Date {
+  return new Date(Date.now() - minutes * 60_000);
+}
 
-  if (existing.length > 0) {
-    logger.info("Seed data already exists, skipping.");
-    return;
-  }
+/**
+ * O seed é de desenvolvimento: popula o banco do zero a cada execução, para o
+ * resultado não depender do que já existir de execuções anteriores.
+ *
+ * `truncate` numa transação única com as quatro tabelas — a ordem e o
+ * `cascade` resolvem as FKs sem precisar apagar de fora para dentro.
+ */
+async function truncateAll() {
+  await db.execute(
+    sql`truncate table ${commentsTable}, ${dealsTable}, ${leadsTable}, ${sellersTable} cascade`
+  );
+}
+
+async function seed() {
+  await truncateAll();
 
   const hasher = new BcryptPasswordHasher();
   const hashedPassword = await hasher.hash(SEED_PASSWORD);
   const now = new Date();
 
   const sellerIds = SELLERS.map(() => uuidv7());
+  const sellerIdByEmail = new Map(
+    SELLERS.map((seller, index) => [seller.email, sellerIds[index]])
+  );
 
   await db.insert(sellersTable).values(
     SELLERS.map((seller, index) => ({
@@ -383,6 +493,11 @@ async function seed() {
     })
   );
 
+  // Comentários são resolvidos depois dos deals, porque referenciam o negócio
+  // pelo título. `position` acompanha o índice do array para o board abrir com
+  // a mesma ordem da lista de deals.
+  const dealIdByTitle = new Map<string, string>();
+
   await db.insert(dealsTable).values(
     DEALS.map((deal, index) => {
       const lead = leadByEmail.get(deal.leadEmail);
@@ -391,6 +506,9 @@ async function seed() {
         throw new Error(`Lead não encontrado no seed: ${deal.leadEmail}`);
       }
 
+      const id = uuidv7();
+      dealIdByTitle.set(deal.title, id);
+
       return {
         createdAt: now,
         description: deal.description,
@@ -398,7 +516,7 @@ async function seed() {
           deal.expectedCloseDateInDays === null
             ? null
             : daysFromNow(deal.expectedCloseDateInDays),
-        id: uuidv7(),
+        id,
         leadId: lead.id,
         // Board ordena por `position DESC`: quanto maior, mais perto do topo.
         position: DEALS.length - index,
@@ -411,9 +529,39 @@ async function seed() {
     })
   );
 
+  await db.insert(commentsTable).values(
+    COMMENTS.map((comment) => {
+      const dealId = dealIdByTitle.get(comment.dealTitle);
+      const sellerId = sellerIdByEmail.get(comment.authorEmail);
+
+      if (!dealId) {
+        throw new Error(`Negócio não encontrado no seed: ${comment.dealTitle}`);
+      }
+
+      if (!sellerId) {
+        throw new Error(
+          `Seller não encontrado no seed: ${comment.authorEmail}`
+        );
+      }
+
+      return {
+        content: comment.content,
+        createdAt: minutesAgo(comment.minutesAgo),
+        dealId,
+        id: uuidv7(),
+        sellerId,
+      };
+    })
+  );
+
   logger.info(
-    { deals: DEALS.length, leads: LEADS.length, sellers: SELLERS.length },
-    "Seed created successfully."
+    {
+      comments: COMMENTS.length,
+      deals: DEALS.length,
+      leads: LEADS.length,
+      sellers: SELLERS.length,
+    },
+    "Database truncated and seed created."
   );
   logger.info(
     { password: SEED_PASSWORD, sellers: SELLERS.map((s) => s.email) },
