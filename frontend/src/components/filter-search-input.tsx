@@ -7,6 +7,8 @@ interface FilterSearchInputProps {
   /** Descrição acessível do filtro; deve diferir entre telas. */
   ariaLabel: string;
   className?: string;
+  /** Mesmo teto do schema da busca: sem ele, digitar além vira 400 na API. */
+  maxLength?: number;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   /** Limpa o termo; o pai decide o que hacer com o estado debounced. */
   onClear: () => void;
@@ -17,6 +19,7 @@ interface FilterSearchInputProps {
 function FilterSearchInput({
   ariaLabel,
   className,
+  maxLength,
   onChange,
   onClear,
   placeholder,
@@ -31,6 +34,7 @@ function FilterSearchInput({
       <Input
         aria-label={ariaLabel}
         className="pr-9 pl-9 [&::-webkit-search-cancel-button]:appearance-none"
+        maxLength={maxLength}
         onChange={onChange}
         placeholder={placeholder}
         type="search"

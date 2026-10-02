@@ -1,5 +1,5 @@
 import type { CommentDTO, DealDTO } from "@sales/shared";
-import { PencilIcon, SendHorizontalIcon } from "lucide-react";
+import { ArrowUpRightIcon, PencilIcon, SendHorizontalIcon } from "lucide-react";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -23,6 +23,7 @@ import {
 } from "../lib/format.ts";
 import { initialsOf } from "../lib/utils.ts";
 import { DEAL_COLUMNS } from "../pages/deals/kanban/board-model.ts";
+import { FilterLink } from "./filter-link.tsx";
 import { Button } from "./ui/button.tsx";
 import {
   Sheet,
@@ -207,6 +208,27 @@ function DealDetailsSidebar({
           </div>
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="col-span-2">
+              <dt className="text-xs text-zinc-500">Lead</dt>
+              <dd className="text-zinc-200">
+                {/* Sublinhado pontilhado + seta: a dica de que leva para a
+                    listagem de leads fica visível sem depender do hover. */}
+                <FilterLink
+                  className="group/link inline-flex max-w-full items-center gap-1 underline decoration-zinc-600 decoration-dotted underline-offset-4 hover:text-orange-300 hover:decoration-orange-300"
+                  patch={{ name: deal.lead.fullName }}
+                  to="/leads"
+                >
+                  <span className="min-w-0 truncate">
+                    {deal.lead.companyName} — {deal.lead.fullName}
+                  </span>
+                  <ArrowUpRightIcon
+                    aria-hidden
+                    className="shrink-0 text-zinc-500 transition-colors group-hover/link:text-orange-300"
+                    size={14}
+                  />
+                </FilterLink>
+              </dd>
+            </div>
             <div>
               <dt className="text-xs text-zinc-500">Valor</dt>
               <dd className="font-semibold text-orange-300">

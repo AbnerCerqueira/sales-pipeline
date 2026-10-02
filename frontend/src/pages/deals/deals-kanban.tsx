@@ -1,7 +1,7 @@
 import type { DealDTO } from "@sales/shared";
 import { Loader2 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import AppShell, { useAppShell } from "../../components/app-shell.tsx";
 import { ClearFiltersButton } from "../../components/clear-filters-button.tsx";
 import { DealDetailsSidebar } from "../../components/deal-details-sidebar.tsx";
@@ -17,7 +17,10 @@ import {
   useUpdateDealMutation,
 } from "../../hooks/use-deals.ts";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
+import { useSearchInput } from "../../hooks/use-search-input.ts";
 import { useSellersQuery } from "../../hooks/use-sellers.ts";
+import { useUrlFilters } from "../../hooks/use-url-filters.ts";
+import { readText, readUuid } from "../../lib/url-filters.ts";
 import { resolveBoardStatus } from "./kanban/board-status.ts";
 import { DealsBoard } from "./kanban/deals-board.tsx";
 import { useDealDrag } from "./kanban/use-deal-drag.ts";
@@ -32,6 +35,8 @@ import { useDealDrag } from "./kanban/use-deal-drag.ts";
  * bomba-relógio esperando o `status` ganhar um estado novo.
  */
 const NO_DEALS: DealDTO[] = [];
+/** Mesmo teto do `listDealsQuerySchema`: a URL pode vir de link colado. */
+const MAX_TITLE_LENGTH = 150;
 
 /**
  * A tela do board. Fica com o que é *da tela*: filtros, queries e o modal.
@@ -50,10 +55,31 @@ function DealsKanbanPage() {
 
 function DealsKanbanContent() {
   const { openDealModal } = useAppShell();
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [leadId, setLeadId] = useState("");
-  const [responsibleId, setResponsibleId] = useState("");
+  // A URL é a fonte de verdade dos filtros: params viram estado de
+  // navegação, então o board é compartilhável e o voltar desfaz filtro.
+  const { pushFilter, commitSearch, searchParams } = useUrlFilters();
+  const filters = useMemo(
+    () => ({
+      leadId: readUuid(searchParams, "leadId"),
+      responsibleId: readUuid(searchParams, "responsibleId"),
+      title: readText(searchParams, "title", MAX_TITLE_LENGTH),
+    }),
+    [searchParams]
+  );
+
+  const commitTitle = useCallback(
+    (value: string) => {
+      commitSearch({ title: value || null });
+    },
+    [commitSearch]
+  );
+  const searchInput = useSearchInput(filters.title, commitTitle);
+  const {
+    reset: resetSearch,
+    setValue: setSearchValue,
+    value: searchValue,
+  } = searchInput;
+
   const [selectedDeal, setSelectedDeal] = useState<DealDTO | null>(null);
   const [editingDeal, setEditingDeal] = useState<DealDTO | null>(null);
   // Espelho do arrasto, só para pausar o polling: o `useDealDrag` é chamado
@@ -68,9 +94,9 @@ function DealsKanbanContent() {
   // A sidebar aberta (selectedDeal) não pausa — ela só lê, e o activeDeal é rederivado a cada refetch.
   const dealsQuery = useDealsQuery(
     {
-      leadId: leadId || undefined,
-      responsibleId: responsibleId || undefined,
-      title: debouncedSearch || undefined,
+      leadId: filters.leadId || undefined,
+      responsibleId: filters.responsibleId || undefined,
+      title: filters.title || undefined,
     },
     isDragging || editingDeal !== null || moveDeal.isPending
   );
@@ -78,36 +104,38 @@ function DealsKanbanContent() {
   useErrorToast(dealsQuery);
   useErrorToast(sellersQuery);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setSearch(event.target.value);
+      setSearchValue(event.target.value);
     },
-    []
+    [setSearchValue]
   );
 
-  const handleResponsibleChange = useCallback((value: string) => {
-    setResponsibleId(value);
-  }, []);
+  const handleResponsibleChange = useCallback(
+    (value: string) => {
+      pushFilter({ responsibleId: value || null });
+    },
+    [pushFilter]
+  );
 
-  // Limpa o estado já debounced: senão a busca reaplicaria o filtro por 300ms.
+  const handleLeadChange = useCallback(
+    (value: string) => {
+      pushFilter({ leadId: value || null });
+    },
+    [pushFilter]
+  );
+
+  // Limpa o input na hora e a URL no mesmo clique: sem esperar o debounce
+  // reescrever a busca com o valor que está sendo apagado.
   const clearSearch = useCallback(() => {
-    setSearch("");
-    setDebouncedSearch("");
-  }, []);
+    resetSearch();
+    pushFilter({ title: null });
+  }, [pushFilter, resetSearch]);
 
   const clearFilters = useCallback(() => {
-    setSearch("");
-    setDebouncedSearch("");
-    setLeadId("");
-    setResponsibleId("");
-  }, []);
+    resetSearch();
+    pushFilter({ leadId: null, responsibleId: null, title: null });
+  }, [pushFilter, resetSearch]);
 
   const closeSidebar = useCallback(() => {
     setSelectedDeal(null);
@@ -127,6 +155,13 @@ function DealsKanbanContent() {
   }, [dealsQuery]);
 
   const deals = dealsQuery.data ?? NO_DEALS;
+
+  // Deep link `?leadId=`: o DTO dos deals já traz o nome do lead, então o
+  // combobox resolve o label daqui em vez de uma query extra.
+  const leadHint = useMemo(
+    () => deals.find((deal) => deal.lead.id === filters.leadId)?.lead ?? null,
+    [deals, filters.leadId]
+  );
 
   // Deriva os patches pendentes no render: o onMutate do React Query roda um
   // microtask depois do mutate(), e nesse 1 commit o card voltaria à coluna de
@@ -164,7 +199,9 @@ function DealsKanbanContent() {
 
   const { isError, isFetching, isPending, isPlaceholderData } = dealsQuery;
   const hasActiveFilters =
-    search.trim() !== "" || leadId !== "" || responsibleId !== "";
+    filters.title !== "" ||
+    filters.leadId !== "" ||
+    filters.responsibleId !== "";
 
   // Sidebar/modal recebem sempre a versão mais fresca da lista (com patches
   // otimistas); o snapshot do clique só entra se o deal sair dos filtros.
@@ -214,19 +251,21 @@ function DealsKanbanContent() {
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2.5">
             <FilterSearchInput
               ariaLabel="Buscar negócio por título"
+              maxLength={MAX_TITLE_LENGTH}
               onChange={handleSearchChange}
               onClear={clearSearch}
               placeholder="Buscar por título..."
-              value={search}
+              value={searchValue}
             />
             <LeadCombobox
               className="w-full sm:w-64 lg:w-72"
               emptyLabel="Lead: Todos"
-              onValueChange={setLeadId}
+              leadHint={leadHint}
+              onValueChange={handleLeadChange}
               placeholder="Buscar lead por nome ou empresa..."
               selectedPrefix="Lead: "
               showAllLabel="Todos"
-              value={leadId}
+              value={filters.leadId}
             />
             <SellerCombobox
               className="w-full sm:w-52"
@@ -238,7 +277,7 @@ function DealsKanbanContent() {
               selectedPrefix="Vendedor: "
               sellers={sellersQuery.data}
               showAllLabel="Todos"
-              value={responsibleId}
+              value={filters.responsibleId}
             />
             {hasActiveFilters ? (
               <ClearFiltersButton onClear={clearFilters} />

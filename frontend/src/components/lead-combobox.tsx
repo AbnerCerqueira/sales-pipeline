@@ -1,4 +1,4 @@
-import type { LeadDTO } from "@sales/shared";
+import type { LeadDTO, LeadSummary } from "@sales/shared";
 import { CheckIcon, ChevronDownIcon, Loader2Icon } from "lucide-react";
 import type * as React from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -25,6 +25,8 @@ interface LeadComboboxProps
   > {
   /** Label when nothing is selected. */
   emptyLabel: string;
+  /** Lead already on screen (deep link): resolves the label without a query. */
+  leadHint?: LeadSummary | null;
   onSelect?: (lead: LeadDTO) => void;
   onValueChange: (value: string) => void;
   placeholder: string;
@@ -34,9 +36,35 @@ interface LeadComboboxProps
   value: string;
 }
 
+/**
+ * Rótulo do trigger. `value` sem lead resolvido (ex.: `leadId` de um deal que
+ * saiu do board) não pode cair em "Todos": mentiria com o filtro ativo.
+ */
+function triggerLabel(
+  lead: LeadSummary | null,
+  value: string,
+  emptyLabel: string,
+  selectedPrefix: string
+): string {
+  if (value === "") {
+    return emptyLabel;
+  }
+  return `${selectedPrefix}${lead?.fullName ?? "—"}`;
+}
+
+function triggerTitle(
+  lead: LeadSummary | null,
+  value: string
+): string | undefined {
+  return value !== "" && !lead
+    ? "Lead sem negócios no filtro atual"
+    : undefined;
+}
+
 function LeadCombobox({
   className,
   emptyLabel,
+  leadHint,
   onValueChange,
   onSelect,
   placeholder,
@@ -48,7 +76,7 @@ function LeadCombobox({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedLead, setSelectedLead] = useState<LeadDTO | null>(null);
+  const [selectedLead, setSelectedLead] = useState<LeadSummary | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -74,17 +102,29 @@ function LeadCombobox({
   const isSearching =
     leadsQuery.isPending || leadsQuery.isFetching || search !== debouncedSearch;
 
+  // `value` chega de fora (deep link/back-forward): o label sai da lista do
+  // popover (só roda com o aberto) ou do hint do DTO, nunca de uma query só
+  // pra resolver o nome. O cache (`selectedLead`) só vale se ainda for o
+  // lead da URL — sem esse guard, voltar para um leadId sem label na tela
+  // mostraria o lead anterior.
+  const popoverMatch = leads?.find((lead) => lead.id === value);
+  const hintMatch = leadHint?.id === value ? leadHint : undefined;
+  const triggerLead =
+    popoverMatch ??
+    hintMatch ??
+    (selectedLead?.id === value ? selectedLead : null);
+
   useEffect(() => {
     if (!value) {
       setSelectedLead(null);
       return;
     }
 
-    const match = leads?.find((lead) => lead.id === value);
+    const match = popoverMatch ?? hintMatch;
     if (match) {
       setSelectedLead(match);
     }
-  }, [leads, value]);
+  }, [hintMatch, popoverMatch, value]);
 
   function handleSelect(lead: LeadDTO) {
     onValueChange(lead.id);
@@ -102,10 +142,6 @@ function LeadCombobox({
     setSearch("");
     setDebouncedSearch("");
   }, [onValueChange]);
-
-  const triggerLabel = selectedLead
-    ? `${selectedPrefix}${selectedLead.fullName}`
-    : emptyLabel;
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -125,13 +161,14 @@ function LeadCombobox({
             className
           )}
           data-slot="lead-combobox-trigger"
+          title={triggerTitle(triggerLead, value)}
           type="button"
           variant="outline"
         >
           <span
-            className={cn("truncate", !selectedLead && "text-muted-foreground")}
+            className={cn("truncate", !triggerLead && "text-muted-foreground")}
           >
-            {triggerLabel}
+            {triggerLabel(triggerLead, value, emptyLabel, selectedPrefix)}
           </span>
           <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
         </Button>

@@ -1,34 +1,42 @@
 import type { LeadDTO, SellerDTO } from "@sales/shared";
 import {
+  ArrowUpRight,
   ChevronLeft,
   ChevronRight,
   Loader2,
   MessageCircle,
   RefreshCw,
   SearchX,
+  SquareKanban,
   UserPlus,
   UserSearch,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AppShell, { useAppShell } from "../../components/app-shell.tsx";
 import { ClearFiltersButton } from "../../components/clear-filters-button.tsx";
+import { FilterLink } from "../../components/filter-link.tsx";
 import { FilterSearchInput } from "../../components/filter-search-input.tsx";
 import Highlight from "../../components/highlight.tsx";
 import { SellerCombobox } from "../../components/seller-combobox.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { useErrorToast } from "../../hooks/use-error-toast.ts";
 import { useLeadsQuery } from "../../hooks/use-leads.ts";
+import { useSearchInput } from "../../hooks/use-search-input.ts";
 import { useSellersQuery } from "../../hooks/use-sellers.ts";
+import { useUrlFilters } from "../../hooks/use-url-filters.ts";
 import { formatCreatedAt, formatFullDate } from "../../lib/format.ts";
 import {
   formatLeadSource,
   leadSourceBadgeClass,
 } from "../../lib/lead-options.ts";
 import { whatsappHref } from "../../lib/masks.ts";
+import { readPage, readText, readUuid } from "../../lib/url-filters.ts";
 import { initialsOf } from "../../lib/utils.ts";
 
 const PAGE_SIZE = 12;
+/** Mesmo teto do `searchLeadsQuerySchema`: a URL pode vir de link colado. */
+const MAX_SEARCH_LENGTH = 100;
 
 const TABLE_HEADERS = [
   "Nome",
@@ -49,67 +57,83 @@ function ListLeadsPage() {
 }
 
 function ListLeadsContent() {
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [responsibleId, setResponsibleId] = useState("");
-  const [page, setPage] = useState(1);
+  // A URL é a fonte de verdade dos filtros: params viram estado de
+  // navegação, então a listagem é compartilhável e o voltar desfaz filtro.
+  const { commitSearch, pushFilter, replaceFilter, searchParams } =
+    useUrlFilters();
+  const filters = useMemo(
+    () => ({
+      name: readText(searchParams, "name", MAX_SEARCH_LENGTH),
+      page: readPage(searchParams),
+      responsibleId: readUuid(searchParams, "responsibleId"),
+    }),
+    [searchParams]
+  );
+
+  const commitName = useCallback(
+    (value: string) => {
+      commitSearch({ name: value || null, page: null });
+    },
+    [commitSearch]
+  );
+  const searchInput = useSearchInput(filters.name, commitName);
+  const {
+    reset: resetSearch,
+    setValue: setSearchValue,
+    value: searchValue,
+  } = searchInput;
 
   const sellersQuery = useSellersQuery();
   const leadsQuery = useLeadsQuery({
-    name: debouncedSearch || undefined,
-    page,
+    name: filters.name || undefined,
+    page: filters.page,
     pageSize: PAGE_SIZE,
-    responsibleId: responsibleId || undefined,
+    responsibleId: filters.responsibleId || undefined,
   });
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   useErrorToast(leadsQuery);
   useErrorToast(sellersQuery);
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setSearch(event.target.value);
+      setSearchValue(event.target.value);
     },
-    []
+    [setSearchValue]
   );
 
-  const handleResponsibleChange = useCallback((value: string) => {
-    setResponsibleId(value);
-    setPage(1);
-  }, []);
+  const handleResponsibleChange = useCallback(
+    (value: string) => {
+      pushFilter({ page: null, responsibleId: value || null });
+    },
+    [pushFilter]
+  );
 
-  // Limpa o estado já debounced: senão a busca reaplicaria o filtro por 300ms.
+  // Limpa o input na hora e a URL no mesmo clique: sem esperar o debounce
+  // reescrever a busca com o valor que está sendo apagado.
   const clearSearch = useCallback(() => {
-    setSearch("");
-    setDebouncedSearch("");
-    setPage(1);
-  }, []);
+    resetSearch();
+    pushFilter({ name: null, page: null });
+  }, [pushFilter, resetSearch]);
 
   const clearFilters = useCallback(() => {
-    setSearch("");
-    setDebouncedSearch("");
-    setResponsibleId("");
-    setPage(1);
-  }, []);
+    resetSearch();
+    pushFilter({ name: null, page: null, responsibleId: null });
+  }, [pushFilter, resetSearch]);
 
-  // Página que produziu os dados em tela. Durante o placeholder, `page` já aponta
-  // para a próxima e usá-la sozinha produziria um intervalo inconsistente.
-  const [renderedPage, setRenderedPage] = useState(page);
+  // Página que produziu os dados em tela. Durante o placeholder, o filtro de
+  // página já aponta para a próxima e usá-lo sozinho produziria um intervalo
+  // inconsistente.
+  const [renderedPage, setRenderedPage] = useState(filters.page);
 
   const goToPreviousPage = useCallback(() => {
-    setPage((current) => current - 1);
-  }, []);
+    pushFilter({
+      page: filters.page <= 2 ? null : String(filters.page - 1),
+    });
+  }, [filters.page, pushFilter]);
 
   const goToNextPage = useCallback(() => {
-    setPage((current) => current + 1);
-  }, []);
+    pushFilter({ page: String(filters.page + 1) });
+  }, [filters.page, pushFilter]);
 
   const retryLeads = useCallback(() => {
     leadsQuery.refetch();
@@ -119,13 +143,23 @@ function ListLeadsContent() {
   const leads = leadsQuery.data?.items ?? [];
   const total = leadsQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasActiveFilters = responsibleId !== "" || search.trim() !== "";
+  const hasActiveFilters = filters.responsibleId !== "" || filters.name !== "";
+
+  // Deep link (ou filtro que encolheu) pode apontar para uma página além do
+  // total: sem isso, a lista volta vazia e o rodapé de paginação — que só
+  // existe quando há itens — some junto, deixando o estado órfão. `replace`
+  // por ser normalização de estado, não uma decisão do usuário.
+  useEffect(() => {
+    if (!isPlaceholderData && filters.page > totalPages) {
+      replaceFilter({ page: null });
+    }
+  }, [filters.page, isPlaceholderData, replaceFilter, totalPages]);
 
   useEffect(() => {
     if (!isPlaceholderData) {
-      setRenderedPage(page);
+      setRenderedPage(filters.page);
     }
-  }, [isPlaceholderData, page]);
+  }, [isPlaceholderData, filters.page]);
 
   const isLoading = isPending;
   // `keepPreviousData`: a query anterior segue na tela enquanto a nova não volta.
@@ -146,8 +180,8 @@ function ListLeadsContent() {
         onClearSearch={clearSearch}
         onResponsibleChange={handleResponsibleChange}
         onSearchChange={handleSearchChange}
-        responsibleId={responsibleId}
-        search={search}
+        responsibleId={filters.responsibleId}
+        search={searchValue}
         sellers={sellersQuery.data}
         sellersError={sellersQuery.isError}
         sellersPending={sellersQuery.isPending}
@@ -168,14 +202,15 @@ function ListLeadsContent() {
           {showResults ? (
             <LeadsResults
               count={leads.length}
-              // O highlight usa o termo já confirmado pela query: com `search` o
-              // destaque piscaria sobre a página anterior durante o placeholder.
-              highlightQuery={debouncedSearch}
+              // O highlight usa o termo já confirmado pela URL/query: com o
+              // valor local do input o destaque piscaria sobre a página
+              // anterior durante o placeholder.
+              highlightQuery={filters.name}
               isPlaceholder={isPlaceholder}
               leads={leads}
               onNext={goToNextPage}
               onPrevious={goToPreviousPage}
-              page={page}
+              page={filters.page}
               renderedPage={renderedPage}
               total={total}
               totalPages={totalPages}
@@ -252,6 +287,7 @@ function LeadsHeader({
         <div className="flex flex-1 flex-wrap items-center justify-end gap-2.5">
           <FilterSearchInput
             ariaLabel="Buscar lead por nome ou empresa"
+            maxLength={MAX_SEARCH_LENGTH}
             onChange={onSearchChange}
             onClear={onClearSearch}
             placeholder="Buscar por nome ou empresa..."
@@ -495,6 +531,15 @@ function LeadsTable({
                   <span className="whitespace-nowrap font-medium text-zinc-100">
                     <Highlight query={highlightQuery} text={lead.fullName} />
                   </span>
+                  <FilterLink
+                    aria-label={`Negócios de ${lead.fullName}`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap text-zinc-400 transition-colors hover:text-orange-300 hover:underline"
+                    patch={{ leadId: lead.id }}
+                    to="/deals"
+                  >
+                    <SquareKanban aria-hidden size={14} />
+                    Negócios
+                  </FilterLink>
                 </span>
               </td>
               <td className="whitespace-nowrap px-5 py-3.5 text-zinc-300">
@@ -512,8 +557,10 @@ function LeadsTable({
                     target="_blank"
                     title="Conversar no WhatsApp"
                   >
-                    <MessageCircle size={13} />
+                    <MessageCircle aria-hidden size={13} />
                     {lead.whatsapp}
+                    <ArrowUpRight aria-hidden size={13} />
+                    <span className="sr-only">(abre em nova aba)</span>
                   </a>
                 ) : (
                   <span className="text-zinc-400">{lead.whatsapp}</span>
@@ -603,6 +650,18 @@ function LeadsCardList({
                 {formatCreatedAt(lead.createdAt)}
               </dd>
             </dl>
+
+            <div className="mt-3 flex justify-end">
+              <FilterLink
+                aria-label={`Negócios de ${lead.fullName}`}
+                className="inline-flex items-center gap-1.5 text-zinc-400 transition-colors hover:text-orange-300 hover:underline"
+                patch={{ leadId: lead.id }}
+                to="/deals"
+              >
+                <SquareKanban aria-hidden size={13} />
+                Negócios
+              </FilterLink>
+            </div>
           </li>
         );
       })}
