@@ -13,6 +13,69 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sales_pipeline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # API e frontend no perfil `app`: `docker compose up -d` continua subindo só o
+  # Postgres (o fluxo sem Docker), e `docker compose --profile app up` sobe a
+  # aplicação inteira. As duas services usam a mesma imagem de desenvolvimento.
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sales-pipeline-dev:local
+    container_name: sales-pipeline-api
+    restart: unless-stopped
+    # `db:push` na subida cria o schema num banco vazio; o seed é um passo
+    # separado e explícito porque ele trunca as tabelas (ver README).
+    command: >-
+      sh -c "pnpm --filter @sales/api db:push --force
+      && pnpm --filter @sales/api dev"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/sales_pipeline
+      LOG_LEVEL: info
+      NODE_ENV: dev
+    ports:
+      - "3333:3333"
+    volumes:
+      - .:/app
+      # Volumes anônomos sobre os `node_modules` da imagem: o código vem do
+      # host, as dependências vêm do build. Sem eles, o bind mount traria os
+      # `node_modules` da máquina junto.
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/frontend/node_modules
+      - /app/shared/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sales-pipeline-dev:local
+    container_name: sales-pipeline-web
+    restart: unless-stopped
+    # `--host` porque o Vite escuta só em localhost dentro do container, e o
+    # navegador do host precisa alcançar a porta publicada.
+    command: pnpm --filter @sales/web exec vite --host 0.0.0.0
+    environment:
+      # O browser fala com a API pela porta publicada no host.
+      VITE_API_URL: http://localhost:3333
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/frontend/node_modules
+      - /app/shared/node_modules
 
 volumes:
   postgres-data:
