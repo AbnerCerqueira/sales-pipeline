@@ -37,6 +37,7 @@ Cada ADR documenta três coisas que um `README` ou um comentário de código nã
 | [ADR-002](features/002-kanban-optimistic-update.md) | Kanban de deals com optimistic update | Aceito |
 | [ADR-003](features/003-ordem-manual-kanban.md) | Ordem manual no kanban com campo `position` | Aceito |
 | [ADR-004](features/004-virtualizacao-kanban.md) | Virtualização da lista de cards do kanban | Aceito |
+| [ADR-005](features/005-filtros-na-url.md) | Filtros de listagem sincronizados com a URL | Aceito |
 
 ## `processo/` — como o trabalho acontece
 
