@@ -146,15 +146,21 @@ export const DealCardView = memo(function MemoDealCardView({
         <CalendarDays aria-hidden size={11} />
         Criado {formatCreatedAt(deal.createdAt)}
       </p>
-      {deal.expectedCloseDate ? (
-        <p
-          className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] text-zinc-400"
-          title={`Fechamento previsto em ${formatExpectedCloseDate(deal.expectedCloseDate)}`}
-        >
-          <CalendarClock aria-hidden size={11} />
-          Prev. {formatExpectedCloseDate(deal.expectedCloseDate)}
-        </p>
-      ) : null}
+      {/* Sempre presente (com "—" quando falta data) para todos os cards
+          terem a mesma altura, independente do conteúdo. */}
+      <p
+        className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] text-zinc-400"
+        title={
+          deal.expectedCloseDate
+            ? `Fechamento previsto em ${formatExpectedCloseDate(deal.expectedCloseDate)}`
+            : "Sem data de fechamento prevista"
+        }
+      >
+        <CalendarClock aria-hidden size={11} />
+        {deal.expectedCloseDate
+          ? `Prev. ${formatExpectedCloseDate(deal.expectedCloseDate)}`
+          : "Prev. —"}
+      </p>
     </>
   );
 });
