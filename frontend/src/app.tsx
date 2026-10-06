@@ -25,7 +25,7 @@ function RedirectIfAuthenticated() {
   const { token } = useAuth();
 
   if (token) {
-    return <Navigate replace to="/leads" />;
+    return <Navigate replace to="/deals" />;
   }
 
   return <Outlet />;

@@ -41,7 +41,7 @@ function LoginPage() {
       onSuccess: ({ token }) => {
         queryClient.clear();
         login(token);
-        navigate("/leads", { replace: true });
+        navigate("/deals", { replace: true });
       },
     });
   }
