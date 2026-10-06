@@ -2,11 +2,9 @@
 
 CRM simples para um time de vendas gerenciar leads e negócios. Um painel onde o vendedor vê seus negócios organizados por status (kanban) e consegue criar leads, negociar, comentar e fechar vendas.
 
-<!-- Vídeo de demonstração: salvar em assets/demo.webm e descomentar o bloco abaixo -->
-<!--
-<video src="assets/demo.webm" autoplay loop muted playsinline width="100%"></video>
--->
-▶️ **[Ver a demonstração](#)** — login, cadastro de lead e negócio, kanban com drag, comentário em thread.
+▶️ **Ver a demonstração** — login, cadastro de lead e negócio, kanban com drag, comentário em thread.
+
+https://github.com/user-attachments/assets/fd0d7433-c1c2-4ac4-a270-50be21db9bc1
 
 ## Tech Stack
 
