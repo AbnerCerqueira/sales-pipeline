@@ -3,6 +3,7 @@ import {
   createDealSchema,
   dealDTOSchema,
   dealIdParamsSchema,
+  dealSummaryResponseSchema,
   listDealsQuerySchema,
   listDealsResponseSchema,
   moveDealSchema,
@@ -14,6 +15,7 @@ import {
   createDealUseCase,
   listDealsUseCase,
   moveDealUseCase,
+  summarizeDealUseCase,
   updateDealUseCase,
 } from "../instances.ts";
 
@@ -110,6 +112,28 @@ export const dealRoutes: FastifyPluginCallbackZod = (app) => {
         request.body
       );
       return reply.status(HttpStatus.OK).send(deal);
+    }
+  );
+
+  app.post(
+    "/:id/summary",
+    {
+      preHandler: [app.authenticate],
+      schema: {
+        description:
+          "Gera um resumo do negócio com IA a partir do lead, status e thread de comentários",
+        params: dealIdParamsSchema,
+        response: {
+          [HttpStatus.OK]: dealSummaryResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
+        summary: "Resumir deal com IA",
+        tags: [SwaggerTag.DEAL],
+      },
+    },
+    async (request, reply) => {
+      const summary = await summarizeDealUseCase.execute(request.params.id);
+      return reply.status(HttpStatus.OK).send(summary);
     }
   );
 };

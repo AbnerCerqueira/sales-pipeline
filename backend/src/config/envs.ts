@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const envSchema = z.object({
+  AI_API_KEY: z.string().default(""),
+  AI_MODEL: z.string().default("gemini-flash-latest"),
   DATABASE_URL: z
     .string()
     .default("postgres://postgres:postgres@localhost:5432/sales_pipeline"),

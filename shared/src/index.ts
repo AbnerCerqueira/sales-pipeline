@@ -27,6 +27,10 @@ export {
 } from "./schemas/deal/list.ts";
 export { type MoveDealInput, moveDealSchema } from "./schemas/deal/move.ts";
 export {
+  type DealSummaryResponse,
+  dealSummaryResponseSchema,
+} from "./schemas/deal/summary.ts";
+export {
   dealIdParamsSchema,
   type UpdateDealInput,
   updateDealSchema,

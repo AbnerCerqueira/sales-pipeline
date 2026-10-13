@@ -3,6 +3,7 @@ packages:
   - "frontend"
   - "shared"
 allowBuilds:
+  '@google/genai': false
   bcrypt: true
   cpu-features: true
   esbuild: true
