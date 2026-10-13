@@ -23,6 +23,10 @@ const Toaster = ({ ...props }: ToasterProps) => (
         "--normal-bg": "var(--popover)",
         "--normal-border": "var(--border)",
         "--normal-text": "var(--popover-foreground)",
+        // O Sheet (Dialog modal do Radix) define `body { pointer-events: none }`
+        // enquanto aberto; sem isto o hover nunca alcança os toasts e a pilha
+        // não expande.
+        pointerEvents: "auto",
       } as React.CSSProperties
     }
     theme="dark"

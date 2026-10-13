@@ -39,6 +39,7 @@ Cada ADR documenta três coisas que um `README` ou um comentário de código nã
 | [ADR-003](features/003-ordem-manual-kanban.md) | Ordem manual no kanban com campo `position` | Aceito |
 | [ADR-004](features/004-virtualizacao-kanban.md) | Virtualização da lista de cards do kanban | Aceito |
 | [ADR-005](features/005-filtros-na-url.md) | Filtros de listagem sincronizados com a URL | Aceito |
+| [ADR-006](features/006-retry-backoff-ia.md) | Retry com backoff na integração de IA (só backend) | Aceito |
 
 ## `processo/` — como o trabalho acontece
 

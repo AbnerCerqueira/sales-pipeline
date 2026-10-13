@@ -23,6 +23,7 @@ import {
 } from "../lib/format.ts";
 import { initialsOf } from "../lib/utils.ts";
 import { DEAL_COLUMNS } from "../pages/deals/kanban/board-model.ts";
+import { DealSummary } from "./deal-summary.tsx";
 import { FilterLink } from "./filter-link.tsx";
 import { Button } from "./ui/button.tsx";
 import {
@@ -286,30 +287,30 @@ function DealDetailsSidebar({
           </section>
         </div>
 
-        <form
-          className="shrink-0 border-zinc-800/60 border-t bg-zinc-950/60 px-5 py-4"
-          onSubmit={handleSubmit}
-        >
-          <Textarea
-            aria-label="Novo comentário"
-            maxLength={2000}
-            onChange={handleContentChange}
-            onKeyDown={handleContentKeyDown}
-            placeholder="Escreva um comentário... (Ctrl+Enter para enviar)"
-            rows={2}
-            value={content}
-          />
-          <div className="mt-2 flex justify-end">
-            <Button
-              disabled={!canSubmit}
-              loading={createComment.isPending}
-              type="submit"
-            >
-              <SendHorizontalIcon aria-hidden />
-              Comentar
-            </Button>
-          </div>
-        </form>
+        <div className="shrink-0 border-zinc-800/60 border-t bg-zinc-950/60">
+          <DealSummary commentCount={comments.length} dealId={deal.id} />
+          <form className="px-5 py-4" onSubmit={handleSubmit}>
+            <Textarea
+              aria-label="Novo comentário"
+              maxLength={2000}
+              onChange={handleContentChange}
+              onKeyDown={handleContentKeyDown}
+              placeholder="Escreva um comentário... (Ctrl+Enter para enviar)"
+              rows={2}
+              value={content}
+            />
+            <div className="mt-2 flex justify-end">
+              <Button
+                disabled={!canSubmit}
+                loading={createComment.isPending}
+                type="submit"
+              >
+                <SendHorizontalIcon aria-hidden />
+                Comentar
+              </Button>
+            </div>
+          </form>
+        </div>
       </SheetContent>
     </Sheet>
   );

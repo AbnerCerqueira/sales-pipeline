@@ -19,7 +19,10 @@ export type GeminiConfig = {
 const SYSTEM_INSTRUCTION =
   "Você é um assistente de vendas. Resuma o negócio em até 5 linhas " +
   "com: situação atual, último avanço, principal trava e sugestão de próximo passo. " +
-  "Tom direto, em português, sem enrolação.";
+  "Tom direto, em português, sem enrolação. " +
+  // O front renderiza bullets `- ` com rótulos em `**negrito**`: o formato
+  // precisa vir daqui, não do acaso do modelo.
+  "Responda em bullets `- ` com os rótulos em `**negrito**`.";
 
 const MAX_ATTEMPTS = 3;
 const BASE_DELAY_MS = 1000;

@@ -313,6 +313,7 @@ function DealsKanbanContent() {
       {activeDeal ? (
         <DealDetailsSidebar
           deal={activeDeal}
+          key={activeDeal.id}
           onClose={closeSidebar}
           onEdit={openEditDeal}
         />
