@@ -27,6 +27,10 @@ As próximas linhas são boas práticas, não uma série estrita de regras.
 
 - Gosto de logs onde são relevantes: use a instância configurada no projeto, com o nível adequado
 
+# Comentários
+
+- Evite comentários que só repetem o que o código já diz; comente apenas código complexo onde é preciso explicar o porquê de uma decisão
+
 # Onde estão as coisas
 
 - `shared`: DTOs e schemas de validação de rota, usados por back e front
