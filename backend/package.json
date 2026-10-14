@@ -13,6 +13,7 @@
     "dev": "NODE_ENV=dev node --env-file=.env.dev --watch src/index.ts",
     "start": "NODE_ENV=prod node --env-file=.env.prod dist/index.js",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -38,6 +39,7 @@
     "@testcontainers/postgresql": "^12.1.0",
     "@types/bcrypt": "^6.0.0",
     "@types/pg": "^8.23.1",
+    "@vitest/coverage-v8": "^5.0.4",
     "drizzle-kit": "1.0.0-rc.4",
     "testcontainers": "^12.1.0",
     "vitest": "^5.0.1"

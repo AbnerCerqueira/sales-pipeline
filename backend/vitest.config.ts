@@ -8,6 +8,12 @@ if (existsSync(".env.test")) {
 
 export default defineConfig({
   test: {
+    coverage: {
+      exclude: ["src/config/**", "src/index.ts", "**/*.test.ts", "test/**"],
+      include: ["src/**/*.ts"],
+      provider: "v8",
+      reporter: ["text", "lcov"],
+    },
     globals: true,
     hookTimeout: 60_000,
     projects: [

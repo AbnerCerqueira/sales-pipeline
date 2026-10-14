@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
   ci:
@@ -26,4 +28,13 @@ jobs:
 
       - run: pnpm build
 
-      - run: pnpm --filter @sales/api test
+      - run: pnpm --filter @sales/api test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          files: ./backend/coverage/lcov.info
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

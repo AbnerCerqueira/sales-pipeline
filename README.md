@@ -1,5 +1,11 @@
 # Sales Pipeline
 
+[![CI](https://github.com/AbnerCerqueira/sales-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/AbnerCerqueira/sales-pipeline/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/AbnerCerqueira/sales-pipeline/graph/badge.svg)](https://codecov.io/gh/AbnerCerqueira/sales-pipeline)
+[![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![pnpm](https://img.shields.io/badge/pnpm-12-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 CRM simples para um time de vendas gerenciar leads e negócios. Um painel onde o vendedor vê seus negócios organizados por status (kanban) e consegue criar leads, negociar, comentar, fechar vendas e resumir threads com IA.
 
 ▶️ **Ver a demonstração** — login, cadastro de lead e negócio, kanban com drag, comentário em thread.
@@ -74,6 +80,12 @@ Duas camadas, ambas com `vitest`:
 - **E2E**: usam um Postgres real via testcontainers e fazem as requisições com
   `app.inject()` do Fastify, sem abrir servidor. Cada arquivo de teste roda em
   seu próprio *template database*, o que permite a execução em paralelo.
+
+Cobertura do backend (enviada ao Codecov pelo CI):
+
+```bash
+pnpm --filter @sales/api test:coverage
+```
 
 ## Roadmap
 
