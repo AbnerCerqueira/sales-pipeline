@@ -1,6 +1,6 @@
 # Sales Pipeline
 
-CRM simples para um time de vendas gerenciar leads e negócios. Um painel onde o vendedor vê seus negócios organizados por status (kanban) e consegue criar leads, negociar, comentar e fechar vendas.
+CRM simples para um time de vendas gerenciar leads e negócios. Um painel onde o vendedor vê seus negócios organizados por status (kanban) e consegue criar leads, negociar, comentar, fechar vendas e resumir threads com IA.
 
 ▶️ **Ver a demonstração** — login, cadastro de lead e negócio, kanban com drag, comentário em thread.
 
@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/fd0d7433-c1c2-4ac4-a270-50be21db9bc1
 
 ## Decisões de design
 
-O projeto reúne diversas ADRs, mas as principais decisões até o momento seriam essas 5:
+O projeto reúne diversas ADRs, mas as principais decisões até o momento seriam essas 6:
 
 - **Drizzle em vez de Prisma**
   Um ORM próximo do SQL nativo. Com o Prisma, os modelos mais complexos acabam em
@@ -50,6 +50,13 @@ O projeto reúne diversas ADRs, mas as principais decisões até o momento seria
   recusar a mudança. A abordagem pessimista obrigaria o usuário a esperar, ou a
   clicar de novo, numa ação que deveria ser imediata.
   → [ADR 002](docs/adr/features/002-kanban-optimistic-update.md)
+
+- **Resumo de thread com IA e retry só no backend**
+  O botão na sidebar do negócio gera o resumo via Gemini: o provider faz retry
+  com backoff e o front tem `retry: false` de propósito, limitando o custo a
+  3 chamadas por clique. A resposta vem em bullets com negrito, que o front
+  renderiza em vez de exibir a sintaxe crua.
+  → [ADR 006](docs/adr/features/006-retry-backoff-ia.md)
 
 Entre eles, vale destacar as decisões de modelagem de dados
 [UUID v7](docs/adr/fundacao/004-uuid-v7.md) e
@@ -84,7 +91,7 @@ Duas camadas, ambas com `vitest`:
 ### Bônus
 
 - [ ] Refinar funcionalidades já existentes
-- [ ] Implementar IA
+- [x] Implementar IA
 
 ## Arquitetura
 
@@ -177,6 +184,8 @@ Todas têm valor padrão, então nada é obrigatório para rodar localmente. Par
 | `JWT_EXPIRATION` | `24h`                                 | Validade do token.                                                      |
 | `LOG_LEVEL`      | `info`                                | `debug` \| `info` \| `warn` \| `error`                                  |
 | `NODE_ENV`       | `dev`                                 | `dev` \| `test` \| `prod`. Em `test`, o custo do bcrypt cai para 0.     |
+| `AI_API_KEY`     | *(vazio)*                             | Chave do Gemini. Sem ela, o resumo responde 503.                        |
+| `AI_MODEL`       | `gemini-flash-latest`                 | Modelo usado no resumo do negócio.                                      |
 
 ### Frontend
 
