@@ -1,3 +1,4 @@
+import { AI_SUMMARY_PREFIX } from "@sales/shared";
 import {
   CheckIcon,
   Loader2Icon,
@@ -54,7 +55,7 @@ function DealSummary({ commentCount, dealId }: DealSummaryProps) {
     }
     addToComments.mutate(
       {
-        content: `Resumo da IA:\n${summaryToPlainText(summaryText)}`,
+        content: `${AI_SUMMARY_PREFIX}\n${summaryToPlainText(summaryText)}`,
         dealId,
       },
       { onSuccess: () => setPostedSummary(summaryText) }

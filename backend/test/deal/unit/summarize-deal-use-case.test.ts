@@ -1,3 +1,4 @@
+import { AI_SUMMARY_PREFIX } from "@sales/shared";
 import { describe, expect, it } from "vitest";
 import { Comment } from "../../../src/modules/comment/comment.ts";
 import { Deal } from "../../../src/modules/deal/deal.ts";
@@ -99,6 +100,56 @@ describe("SummarizeDealUseCase", () => {
       title: "Deal Acme",
       value: 30_000,
     });
+  });
+
+  it("excludes previous AI summaries from the comments sent to the prompt", async () => {
+    const {
+      aiProvider,
+      commentRepository,
+      dealRepository,
+      leadRepository,
+      useCase,
+    } = setup();
+    const deal = createDeal();
+    const seller = createSeller();
+    dealRepository.willFind(deal);
+    leadRepository.willFind(createLead());
+    commentRepository.willList([
+      {
+        comment: Comment.create({
+          content: `${AI_SUMMARY_PREFIX}\nResumo gerado na negociação`,
+          dealId: deal.id,
+          sellerId: seller.id,
+        }),
+        seller,
+      },
+      {
+        comment: Comment.create({
+          content: "Deal fechado com desconto de 10%",
+          dealId: deal.id,
+          sellerId: seller.id,
+        }),
+        seller,
+      },
+      {
+        // Começa com o prefixo mas sem a quebra de linha do formato publicado
+        // pelo card de resumo: é um comentário de seller, vai pro prompt.
+        comment: Comment.create({
+          content: `${AI_SUMMARY_PREFIX} cliente pediu desconto`,
+          dealId: deal.id,
+          sellerId: seller.id,
+        }),
+        seller,
+      },
+    ]);
+    aiProvider.willSummarize("Resumo do deal");
+
+    await useCase.execute(deal.id);
+
+    expect(aiProvider.receivedInput?.comments).toEqual([
+      "Deal fechado com desconto de 10%",
+      `${AI_SUMMARY_PREFIX} cliente pediu desconto`,
+    ]);
   });
 
   it("throws DealNotFoundError without calling the AI when the deal does not exist", async () => {

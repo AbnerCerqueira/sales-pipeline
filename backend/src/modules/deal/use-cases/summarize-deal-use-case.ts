@@ -1,4 +1,4 @@
-import type { DealSummaryResponse } from "@sales/shared";
+import { AI_SUMMARY_PREFIX, type DealSummaryResponse } from "@sales/shared";
 import { logger } from "../../../utils/logger.ts";
 import type { CommentRepository } from "../../comment/comment-repository.ts";
 import type { LeadRepository } from "../../lead/lead-repository.ts";
@@ -37,8 +37,17 @@ export class SummarizeDealUseCase {
 
     logger.info({ dealId: id }, "Deal summary requested");
 
+    // Paliativo: resumos de IA entram na thread como comments comuns e degradam o
+    // próximo resumo; detecta pelo prefixo acordado com o front (AI_SUMMARY_PREFIX).
+    // TODO: trocar por coluna kind ('seller' | 'ai') nos comments + rota própria de resumo.
+    const commentsInput = comments
+      .filter(
+        ({ comment }) => !comment.content.startsWith(`${AI_SUMMARY_PREFIX}\n`)
+      )
+      .map(({ comment }) => comment.content);
+
     const summary = await this.aiProvider.summarizeDeal({
-      comments: comments.map(({ comment }) => comment.content),
+      comments: commentsInput,
       description: deal.description,
       expectedCloseDate:
         deal.expectedCloseDate?.toISOString().slice(0, 10) ?? null,
