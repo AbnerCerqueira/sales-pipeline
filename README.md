@@ -10,7 +10,7 @@ CRM simples para um time de vendas gerenciar leads e negócios. Um painel onde o
 
 ▶️ **Ver a demonstração** — login, cadastro de lead e negócio, kanban com drag, comentário em thread.
 
-https://github.com/user-attachments/assets/fd0d7433-c1c2-4ac4-a270-50be21db9bc1
+https://github.com/user-attachments/assets/cbcf484d-0a99-4004-b2b2-33c0a8b56beb
 
 ## Tech Stack
 
